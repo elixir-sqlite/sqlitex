@@ -15,4 +15,11 @@ defmodule Sqlitex do
       Enum.zip(columns,Tuple.to_list(row))
     end)
   end
+
+  def with_db(path, fun) do
+    {:ok, db} = open(path)
+    res = fun.(db)
+    close(db)
+    res
+  end
 end
