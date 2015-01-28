@@ -1,6 +1,5 @@
-defmodule Golf.Server do
+defmodule Sqlitex.Server do
   use GenServer
-  require Logger
 
   def start_link(db_path) do
     {:ok, db} = Sqlitex.open(db_path)
@@ -15,6 +14,6 @@ defmodule Golf.Server do
   ## Public API
 
   def query(sql) do
-    GenServer.call(:sup_sqlitex_worker, {:query,sql})
+    GenServer.call(__MODULE__, {:query, sql})
   end
 end
