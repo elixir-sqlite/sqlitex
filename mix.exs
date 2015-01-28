@@ -3,7 +3,7 @@ defmodule Sqlitex.Mixfile do
 
   def project do
     [app: :sqlitex,
-     version: "0.0.1",
+     version: "0.0.2",
      elixir: "~> 1.0",
      deps: deps,
      package: package,
@@ -20,7 +20,7 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, git: "https://github.com/mmzeeman/esqlite.git", tag: "9967ced039246f75f66a3891f584b1f150e56463"}
+      {:esqlite, "~> 0.0.2"}
     ]
   end
 

@@ -1,1 +1,1 @@
-%{"esqlite": {:git, "https://github.com/mmzeeman/esqlite.git", "9967ced039246f75f66a3891f584b1f150e56463", [tag: "9967ced039246f75f66a3891f584b1f150e56463"]}}
+%{"esqlite": {:hex, :esqlite, "0.0.2"}}
