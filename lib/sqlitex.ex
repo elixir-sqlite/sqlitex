@@ -7,14 +7,23 @@ defmodule Sqlitex do
     :esqlite3.open(path)
   end
 
-  def query(db, query) do
+  def query(db, query, opts \\ []) do
     {:ok, statement} = :esqlite3.prepare(query, db)
-    columns = :esqlite3.column_names(statement) |> Tuple.to_list
+    columns = :esqlite3.column_names(statement)
     rows = :esqlite3.fetchall(statement)
-    Enum.map(rows, fn(row) ->
-      values = row |> Tuple.to_list |> Enum.map(&translate_value/1)
-      Enum.zip(columns,values)
-    end)
+    into = Keyword.get(opts, :into, [])
+
+    for row <- rows do
+      build_row(columns, row, into)
+    end
+  end
+
+  defp build_row(columns, row, into) do
+    values = row |> Tuple.to_list |> Enum.map(&translate_value/1)
+
+    Tuple.to_list(columns)
+    |> Enum.zip(values)
+    |> Enum.into(into)
   end
 
   def with_db(path, fun) do
