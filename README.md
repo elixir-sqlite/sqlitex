@@ -13,6 +13,11 @@ Sqlitex.with_db('test/fixtures/golfscores.sqlite3', fn(db) ->
   Sqlitex.query(db, "SELECT * FROM players ORDER BY id LIMIT 1")
 end)
 # => [[id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]]
+
+Sqlitex.with_db('test/fixtures/golfscores.sqlite3', fn(db) ->
+  Sqlitex.query(db, "SELECT * FROM players ORDER BY id LIMIT 1", into: %{})
+end)
+# => [%{id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil}]
 ```
 
 If you want to keep the database open during the lifetime of your project you can use the `Sqlitex.Server` GenServer module.
