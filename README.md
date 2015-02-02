@@ -39,6 +39,11 @@ Sqlitex.Server.query("SELECT g.id, g.course_id, g.played_at, c.name AS course
                       ORDER BY g.played_at DESC LIMIT 10")
 ```
 
+Benchmarks
+==========
+
+I'm using [Benchfella](https://github.com/alco/benchfella) to keep track of our performance for some of the basic operations. If you want to check benchmark speeds just install benchfella and then run `mix bench` to run the stats.
+
 Plans
 =====
 
