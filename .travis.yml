@@ -3,4 +3,8 @@ otp_release:
  - 17.4
 elixir:
  - 1.0
-sudo: false
+install:
+ - mix local.hex --force
+ - mix local.rebar --force
+ - mix deps.get
+ - mix deps.compile esqlite
