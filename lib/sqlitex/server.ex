@@ -3,7 +3,7 @@ defmodule Sqlitex.Server do
 
   def start_link(db_path) do
     {:ok, db} = Sqlitex.open(db_path)
-    GenServer.start_link(__MODULE__, db, [name: __MODULE__])
+    GenServer.start_link(__MODULE__, db)
   end
 
   def handle_call({:query, sql}, _from, db) do
@@ -11,9 +11,17 @@ defmodule Sqlitex.Server do
     {:reply, rows, db}
   end
 
+  def handle_call(:stop, _from, db) do
+    {:stop, :normal, Sqlitex.close(db), db}
+  end
+
   ## Public API
 
-  def query(sql) do
-    GenServer.call(__MODULE__, {:query, sql})
+  def query(pid, sql) do
+    GenServer.call(pid, {:query, sql})
+  end
+
+  def stop(pid) do
+    GenServer.call(pid, :stop)
   end
 end
