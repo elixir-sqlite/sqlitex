@@ -8,10 +8,10 @@ defmodule Sqlitex do
   end
 
   def query(db, sql) do
-    do_query(db, sql, nil, [])
+    do_query(db, sql, [], [])
   end
   def query(db, sql, into: into) do
-    do_query(db, sql, nil, into)
+    do_query(db, sql, [], into)
   end
   def query(db, sql, params) when is_list(params) do
     do_query(db, sql, params, [])
@@ -22,9 +22,7 @@ defmodule Sqlitex do
 
   defp do_query(db, sql, params, into) do
     {:ok, statement} = :esqlite3.prepare(sql, db)
-    if params do
-      :ok = :esqlite3.bind(statement, params)
-    end
+    :ok = :esqlite3.bind(statement, params)
     types = :esqlite3.column_types(statement) |> Tuple.to_list
     columns = :esqlite3.column_names(statement) |> Tuple.to_list
     rows = :esqlite3.fetchall(statement)
