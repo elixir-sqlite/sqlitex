@@ -20,7 +20,7 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, "~> 0.0.4"}
+      {:esqlite, git: "https://github.com/jazzyb/esqlite.git"}
     ]
   end
 

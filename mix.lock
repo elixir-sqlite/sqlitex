@@ -1,2 +1,1 @@
-%{"benchwarmer": {:hex, :benchwarmer, "0.0.2"},
-  "esqlite": {:hex, :esqlite, "0.0.4"}}
+%{"esqlite": {:git, "https://github.com/jazzyb/esqlite.git", "2a32ad90e61403a593fcc2be315b9c35adc6e06e", []}}

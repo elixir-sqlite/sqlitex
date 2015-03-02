@@ -6,6 +6,11 @@ defmodule Sqlitex.Server do
     GenServer.start_link(__MODULE__, db)
   end
 
+  def handle_call({:exec, sql}, _from, db) do
+    result = Sqlitex.exec(db, sql)
+    {:reply, result, db}
+  end
+
   def handle_call({:query, sql, params}, _from, db) do
     rows = Sqlitex.query(db, sql, params)
     {:reply, rows, db}
@@ -16,6 +21,10 @@ defmodule Sqlitex.Server do
   end
 
   ## Public API
+
+  def exec(pid, sql) do
+    GenServer.call(pid, {:exec, sql})
+  end
 
   def query(pid, sql, params \\ []) do
     GenServer.call(pid, {:query, sql, params})
