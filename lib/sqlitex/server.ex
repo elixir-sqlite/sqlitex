@@ -11,9 +11,27 @@ defmodule Sqlitex.Server do
     {:reply, rows, db}
   end
 
+  def handle_call({:create, name, cols}, _from, db) do
+    result = Sqlitex.create(db, name, cols)
+    {:reply, result, db}
+  end
+
+  def handle_call({:exec, sql}, _from, db) do
+    result = Sqlitex.exec(db, sql)
+    {:reply, result, db}
+  end
+
   ## Public API
 
   def query(sql) do
     GenServer.call(__MODULE__, {:query, sql})
+  end
+
+  def create(name, cols) do
+    GenServer.call(__MODULE__, {:create, name, cols})
+  end
+
+  def exec(sql) do
+    GenServer.call(__MODULE__, {:exec, sql})
   end
 end
