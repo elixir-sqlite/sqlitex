@@ -18,26 +18,20 @@ defmodule Sqlitex do
     :esqlite3.exec(sql, db)
   end
 
-  def query(db, sql) do
-    do_query(db, sql, [], [])
-  end
-  def query(db, sql, [into: into]) do
-    do_query(db, sql, [], into)
-  end
-  def query(db, sql, params) when is_list(params) do
-    do_query(db, sql, params, [])
-  end
-  def query(db, sql, params, [into: into]) when is_list(params) do
-    do_query(db, sql, params, into)
-  end
-
-  defp do_query(db, sql, params, into) do
+  def query(db, sql, opts \\ []) do
+    {params, into} = query_options(opts)
     {:ok, statement} = :esqlite3.prepare(sql, db)
     :ok = :esqlite3.bind(statement, params)
     types = :esqlite3.column_types(statement)
     columns = :esqlite3.column_names(statement)
     rows = :esqlite3.fetchall(statement)
     return_rows_or_error(types, columns, rows, into)
+  end
+
+  defp query_options(opts) do
+    params = Keyword.get(opts, :bind, [])
+    into = Keyword.get(opts, :into, [])
+    {params, into}
   end
 
   defp return_rows_or_error(_, _, {:error, _} = error, _), do: error

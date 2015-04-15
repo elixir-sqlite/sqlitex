@@ -25,14 +25,14 @@ defmodule SqlitexTest do
 
   test "a parameterized query" do
     {:ok, db} = Sqlitex.open('test/fixtures/golfscores.sqlite3')
-    [row] = db |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", ["s%", "Team"])
+    [row] = db |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
     assert row == [id: 25, name: "Slothstronauts"]
     Sqlitex.close(db)
   end
 
   test "a parameterized query into %{}" do
     {:ok, db} = Sqlitex.open('test/fixtures/golfscores.sqlite3')
-    [row] = db |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", ["s%", "Team"], into: %{})
+    [row] = db |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"], into: %{})
     assert row == %{id: 25, name: "Slothstronauts"}
     Sqlitex.close(db)
   end
