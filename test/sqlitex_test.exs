@@ -45,4 +45,11 @@ defmodule SqlitexTest do
     assert row == [a: 1, b: 2, c: 3]
     Sqlitex.close(db)
   end
+
+  test "query without columns" do
+    {:ok, db} = Sqlitex.open(':memory:')
+    result = Sqlitex.query(db, "CREATE TABLE t (a, b, c)")
+    assert result == []
+    Sqlitex.close(db)
+  end
 end
