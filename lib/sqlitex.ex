@@ -34,19 +34,9 @@ defmodule Sqlitex do
     {params, into}
   end
 
+  defp return_rows_or_error({:error, _} = error, _, _, _), do: error
+  defp return_rows_or_error(_, {:error, _} = error, _, _), do: error
   defp return_rows_or_error(_, _, {:error, _} = error, _), do: error
-  defp return_rows_or_error({:error, kind} = error, columns, rows, into) do
-    case kind do
-      :no_columns -> return_rows_or_error({}, columns, rows, into)
-      _ -> error
-    end
-  end
-  defp return_rows_or_error(types, {:error, kind} = error, rows, into) do
-    case kind do
-      :no_columns -> return_rows_or_error(types, {}, rows, into)
-      _ -> error
-    end
-  end
   defp return_rows_or_error(types, columns, rows, into) do
     Sqlitex.Row.from(Tuple.to_list(types), Tuple.to_list(columns), rows, into)
   end

@@ -11,8 +11,8 @@ defmodule Sqlitex.Server do
     {:reply, result, db}
   end
 
-  def handle_call({:query, sql, params}, _from, db) do
-    rows = Sqlitex.query(db, sql, params)
+  def handle_call({:query, sql, opts}, _from, db) do
+    rows = Sqlitex.query(db, sql, opts)
     {:reply, rows, db}
   end
 
@@ -26,8 +26,8 @@ defmodule Sqlitex.Server do
     GenServer.call(pid, {:exec, sql})
   end
 
-  def query(pid, sql, params \\ []) do
-    GenServer.call(pid, {:query, sql, params})
+  def query(pid, sql, opts \\ []) do
+    GenServer.call(pid, {:query, sql, opts})
   end
 
   def stop(pid) do
