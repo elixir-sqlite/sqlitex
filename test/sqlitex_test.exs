@@ -46,10 +46,9 @@ defmodule SqlitexTest do
     Sqlitex.close(db)
   end
 
-  test "query without columns" do
+  test "it handles queries with no columns" do
     {:ok, db} = Sqlitex.open(':memory:')
-    result = Sqlitex.query(db, "CREATE TABLE t (a, b, c)")
-    assert result == []
+    assert [] == Sqlitex.query(db, "CREATE TABLE t (a INTEGER, b INTEGER, c INTEGER)")
     Sqlitex.close(db)
   end
 end
