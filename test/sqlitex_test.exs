@@ -1,8 +1,10 @@
 defmodule SqlitexTest do
   use ExUnit.Case
 
+  @shared_cache 'file::memory:?cache=shared'
+
   setup_all do
-    {:ok, db} = Sqlitex.open(':memory:')
+    {:ok, db} = Sqlitex.open(@shared_cache)
     on_exit fn ->
       Sqlitex.close(db)
     end
@@ -20,8 +22,7 @@ defmodule SqlitexTest do
   end
 
   test "with_db" do
-    [row] = Sqlitex.with_db(':memory:', fn(db) ->
-      db = TestDatabase.init(db)
+    [row] = Sqlitex.with_db(@shared_cache, fn(db) ->
       Sqlitex.query(db, "SELECT * FROM players ORDER BY id LIMIT 1")
     end)
 
