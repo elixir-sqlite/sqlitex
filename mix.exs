@@ -3,7 +3,7 @@ defmodule Sqlitex.Mixfile do
 
   def project do
     [app: :sqlitex,
-     version: "0.0.8",
+     version: "0.0.9",
      elixir: "~> 1.0",
      deps: deps,
      package: package,
