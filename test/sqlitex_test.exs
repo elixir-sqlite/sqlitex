@@ -40,7 +40,7 @@ defmodule SqlitexTest do
   end
 
   test "exec" do
-    {:ok, db} = Sqlitex.open(':memory:')
+    {:ok, db} = Sqlitex.open(":memory:")
     :ok = Sqlitex.exec(db, "CREATE TABLE t (a INTEGER, b INTEGER, c INTEGER)")
     :ok = Sqlitex.exec(db, "INSERT INTO t VALUES (1, 2, 3)")
     [row] = Sqlitex.query(db, "SELECT * FROM t LIMIT 1")

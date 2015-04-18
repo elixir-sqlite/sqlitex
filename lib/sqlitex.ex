@@ -3,6 +3,7 @@ defmodule Sqlitex do
     :esqlite3.close(db)
   end
 
+  def open(path) when is_binary(path), do: open(String.to_char_list(path))
   def open(path) do
     :esqlite3.open(path)
   end
