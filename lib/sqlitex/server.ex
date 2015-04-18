@@ -16,8 +16,13 @@ defmodule Sqlitex.Server do
     {:reply, rows, db}
   end
 
-  def handle_call(:stop, _from, db) do
-    {:stop, :normal, Sqlitex.close(db), db}
+  def handle_cast(:stop, db) do
+    {:stop, :normal, db}
+  end
+
+  def terminate(_reason, db) do
+    Sqlitex.close(db)
+    :ok
   end
 
   ## Public API
@@ -31,6 +36,6 @@ defmodule Sqlitex.Server do
   end
 
   def stop(pid) do
-    GenServer.call(pid, :stop)
+    GenServer.cast(pid, :stop)
   end
 end
