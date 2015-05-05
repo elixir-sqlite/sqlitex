@@ -2,8 +2,16 @@ defmodule Sqlitex.Server do
   use GenServer
 
   def start_link(db_path) do
-    {:ok, db} = Sqlitex.open(db_path)
-    GenServer.start_link(__MODULE__, db)
+    GenServer.start_link(__MODULE__, db_path)
+  end
+
+  ## GenServer callbacks
+
+  def init(db_path) do
+    case Sqlitex.open(db_path) do
+      {:ok, db} -> {:ok, db}
+      {:error, reason} -> {:stop, reason}
+    end
   end
 
   def handle_call({:exec, sql}, _from, db) do
@@ -16,8 +24,13 @@ defmodule Sqlitex.Server do
     {:reply, rows, db}
   end
 
-  def handle_call(:stop, _from, db) do
-    {:stop, :normal, Sqlitex.close(db), db}
+  def handle_cast(:stop, db) do
+    {:stop, :normal, db}
+  end
+
+  def terminate(_reason, db) do
+    Sqlitex.close(db)
+    :ok
   end
 
   ## Public API
@@ -31,6 +44,6 @@ defmodule Sqlitex.Server do
   end
 
   def stop(pid) do
-    GenServer.call(pid, :stop)
+    GenServer.cast(pid, :stop)
   end
 end
