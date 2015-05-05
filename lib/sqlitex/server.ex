@@ -2,18 +2,16 @@ defmodule Sqlitex.Server do
   use GenServer
 
   def start_link(db_path) do
-    {:ok, db} = Sqlitex.open(db_path)
-    GenServer.start_link(__MODULE__, db, [name: __MODULE__])
+    GenServer.start_link(__MODULE__, db_path)
   end
 
-  def handle_call({:query, sql}, _from, db) do
-    rows = Sqlitex.query(db, sql)
-    {:reply, rows, db}
-  end
+  ## GenServer callbacks
 
-  def handle_call({:create, name, cols}, _from, db) do
-    result = Sqlitex.create(db, name, cols)
-    {:reply, result, db}
+  def init(db_path) do
+    case Sqlitex.open(db_path) do
+      {:ok, db} -> {:ok, db}
+      {:error, reason} -> {:stop, reason}
+    end
   end
 
   def handle_call({:exec, sql}, _from, db) do
@@ -21,17 +19,40 @@ defmodule Sqlitex.Server do
     {:reply, result, db}
   end
 
+  def handle_call({:query, sql, opts}, _from, db) do
+    rows = Sqlitex.query(db, sql, opts)
+    {:reply, rows, db}
+  end
+
+  def handle_call({:create, name, cols}, _from, db) do
+    result = Sqlitex.create(db, name, cols)
+    {:reply, result, db}
+  end
+  
+  def handle_cast(:stop, db) do
+    {:stop, :normal, db}
+  end
+
+  def terminate(_reason, db) do
+    Sqlitex.close(db)
+    :ok
+  end
+
   ## Public API
 
-  def query(sql) do
-    GenServer.call(__MODULE__, {:query, sql})
+  def exec(pid, sql) do
+    GenServer.call(pid, {:exec, sql})
   end
 
-  def create(name, cols) do
-    GenServer.call(__MODULE__, {:create, name, cols})
+  def query(pid, sql, opts \\ []) do
+    GenServer.call(pid, {:query, sql, opts})
   end
 
-  def exec(sql) do
-    GenServer.call(__MODULE__, {:exec, sql})
+  def create(pid, name, cols) do
+    GenServer.call(pid, {:create, name, cols})
+  end
+
+  def stop(pid) do
+    GenServer.cast(pid, :stop)
   end
 end
