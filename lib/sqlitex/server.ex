@@ -1,8 +1,8 @@
 defmodule Sqlitex.Server do
   use GenServer
 
-  def start_link(db_path) do
-    GenServer.start_link(__MODULE__, db_path)
+  def start_link(db_path, opts \\ []) do
+    GenServer.start_link(__MODULE__, db_path, opts)
   end
 
   ## GenServer callbacks
