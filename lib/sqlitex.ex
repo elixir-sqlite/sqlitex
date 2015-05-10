@@ -29,18 +29,26 @@ defmodule Sqlitex do
     return_rows_or_error(types, columns, rows, into)
   end
 
-  def create(db, name, rows) do
-    stmt = Enum.reduce(rows, nil, fn row, acc ->
-      {name, type} = row
-      cond do
-        acc == nil ->
-          Enum.join([Atom.to_string(name), Atom.to_string(type)], " ")
-        true ->
-          Enum.join([acc, ",", Atom.to_string(name), Atom.to_string(type)], " ")
-      end
-    end)
+  @doc """
+  Create a new table `name` where `table_opts` are a list of table constraints
+  and `cols` are a keyword list of columns. The following table constraints are
+  supported: `:temp` and `:primary_key`. Example:
 
-    exec(db, "CREATE TABLE IF NOT EXISTS #{name} (#{stmt})")
+  **[:temp, {:primary_key, [:id]}]**
+
+  Columns can be passed as:
+  * name: :type
+  * name: {:type, constraints}
+
+  where constraints is a list of column constraints. The following column constraints
+  are supported: `:primary_key`, `:not_null` and `:autoincrement`. Example:
+
+  **id: :integer, name: {:text, [:not_null]}**
+
+  """
+  def create_table(db, name, table_opts \\ [], cols) do
+    stmt = Sqlitex.SqlBuilder.create_table(name, table_opts, cols)
+    exec(db, stmt)
   end
 
   defp query_options(opts) do

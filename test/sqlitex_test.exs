@@ -38,13 +38,14 @@ defmodule SqlitexTest do
 
   test "table creation works as expected" do
     [row] = Sqlitex.with_db(":memory:", fn(db) ->
-      Sqlitex.create(db, "users", id: :integer, name: :text)
+      Sqlitex.create_table(db, :users, id: {:integer, [:primary_key, :not_null]}, name: :text)
       Sqlitex.query(db, "SELECT * FROM sqlite_master", into: %{})
     end)
 
-    # Use pattern matching instead of equality because  we are not interrested in all
-    # returned properties
-    assert row = %{type: "table", name: "users", tbl_name: "users", sql: "CREATE TABLE users (id number , name text)"}
+    assert row.type == "table"
+    assert row.name == "users"
+    assert row.tbl_name == "users"
+    assert row.sql == "CREATE TABLE users ( id integer PRIMARY KEY NOT NULL , name text )"
   end
     
   test "a parameterized query", context do
