@@ -3,7 +3,7 @@
 Sqlitex
 =======
 
-An Elixir wrapper around [https://github.com/mmzeeman/esqlite](esqlite). The main aim here is to provide convenient usage of sqlite databases.
+An Elixir wrapper around [esqlite](https://github.com/mmzeeman/esqlite). The main aim here is to provide convenient usage of sqlite databases.
 
 Usage
 =====
