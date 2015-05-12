@@ -8,7 +8,7 @@ An Elixir wrapper around [esqlite](https://github.com/mmzeeman/esqlite). The mai
 Usage
 =====
 
-The simples way to use sqlitex is just to open a database and run a query
+The simple way to use sqlitex is just to open a database and run a query
 
 ```elixir
 Sqlitex.with_db('test/fixtures/golfscores.sqlite3', fn(db) ->
@@ -29,13 +29,14 @@ children = [
       # Start the endpoint when the application starts
       worker(Golf.Endpoint, []),
 
-      worker(Sqlitex.Server, ['/Users/hqmq/code/golfscore-phoenix/db/golf.sqlite3'])
+      worker(Sqlitex.Server, ['golf.sqlite3', [name: Sqlitex.Server]])
     ]
 ```
 
 Now that the GenServer is running you can make queries via
 ```elixir
-Sqlitex.Server.query("SELECT g.id, g.course_id, g.played_at, c.name AS course
+Sqlitex.Server.query(Sqlitex.Server,
+                     "SELECT g.id, g.course_id, g.played_at, c.name AS course
                       FROM games AS g
                       INNER JOIN courses AS c ON g.course_id = c.id
                       ORDER BY g.played_at DESC LIMIT 10")
@@ -49,6 +50,6 @@ I'm using [Benchfella](https://github.com/alco/benchfella) to keep track of our 
 Plans
 =====
 
-This package currently only supports really basic reads. I am building this package as an attempt to learn more about Elixir and I'll be adding features only as I need them.
+I am building this package as an attempt to learn more about Elixir and I'll be adding features only as I need them.
 
 I would love to get any feedback I can on how other people might want to use SQlite with Elixir.
