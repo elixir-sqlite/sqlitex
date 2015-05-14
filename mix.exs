@@ -20,12 +20,15 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, "~> 0.1.0"}
+      {:esqlite, "~> 0.1.0"},
+
+      {:ex_doc, "~> 0.7", only: :dev},
+      {:inch_ex, "~> 0.2", only: :dev},
     ]
   end
 
   defp package do
-   [contributors: ["Michael Ries"],
+   [contributors: ["Michael Ries", "Jason M Barnes"],
      licenses: ["MIT"],
      links: %{github: "https://github.com/mmmries/sqlitex"}]
   end
