@@ -47,7 +47,7 @@ defmodule SqlitexTest do
     assert row.tbl_name == "users"
     assert row.sql == "CREATE TABLE users ( id integer PRIMARY KEY NOT NULL , name text )"
   end
-    
+
   test "a parameterized query", context do
     [row] = context[:golf_db] |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
     assert row == [id: 25, name: "Slothstronauts"]
