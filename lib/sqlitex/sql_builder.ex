@@ -15,9 +15,9 @@ defmodule Sqlitex.SqlBuilder do
     tbl_options = get_opts_dict(table_opts, &table_opt/1)
     get_opt = &(Dict.get(tbl_options, &1, nil))
 
-    "CREATE #{get_opt.(:temp)} TABLE #{get_opt.(:if_not_exists)} #{name} (#{get_columns_block(cols)} #{get_opt.(:primary_key)})"
+    "CREATE #{get_opt.(:temp)} TABLE #{name} (#{get_columns_block(cols)} #{get_opt.(:primary_key)})"
   end
-  
+
   # Supported table options
   defp table_opt(:temporary), do: {:temp, "TEMP"}
   defp table_opt(:temp), do: {:temp, "TEMP"}
@@ -42,25 +42,20 @@ defmodule Sqlitex.SqlBuilder do
   # Create the sql fragment for the column definitions from the
   # passed keyword list
   defp get_columns_block(cols) do
-    Enum.reduce(cols, "", fn(col, acc) ->
-      comma = if acc == "" do nil else "," end
-
+    Enum.map(cols, fn(col) ->
       case col do
         # Column with name, type and constraint
         {name, {type, constraints}} ->
           col_options = get_opts_dict(constraints, &column_opt/1)
           get_opt = &(Dict.get(col_options, &1, nil))
-          
-          Enum.join([
-            "#{acc}#{comma}", "#{name}", "#{type}",
-            "#{get_opt.(:primary_key)}",
-            "#{get_opt.(:not_null)}",
-            "#{get_opt.(:autoincrement)}"
-          ], " ")
+
+          [name, type, get_opt.(:primary_key), get_opt.(:not_null), get_opt.(:autoincrement)]
+            |> Enum.filter(&(&1))
+            |> Enum.join(" ")
         # Column with name and type
         {name, type} ->
-          "#{acc}#{comma} #{name} #{type}"
+          "#{name} #{type}"
       end
-    end)
+    end) |> Enum.join(", ")
   end
 end
