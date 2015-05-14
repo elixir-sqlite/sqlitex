@@ -24,11 +24,11 @@ defmodule Sqlitex.Server do
     {:reply, rows, db}
   end
 
-  def handle_call({:create_table, name, cols}, _from, db) do
-    result = Sqlitex.create_table(db, name, cols)
+  def handle_call({:create_table, name, table_opts, cols}, _from, db) do
+    result = Sqlitex.create_table(db, name, table_opts, cols)
     {:reply, result, db}
   end
-  
+
   def handle_cast(:stop, db) do
     {:stop, :normal, db}
   end
@@ -48,8 +48,8 @@ defmodule Sqlitex.Server do
     GenServer.call(pid, {:query, sql, opts})
   end
 
-  def create_table(pid, name, cols) do
-    GenServer.call(pid, {:create_table, name, cols})
+  def create_table(pid, name, table_opts \\ [], cols) do
+    GenServer.call(pid, {:create_table, name, table_opts, cols})
   end
 
   def stop(pid) do
