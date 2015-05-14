@@ -43,6 +43,18 @@ defmodule SqlitexTest do
     assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]
   end
 
+  test "table creation works as expected" do
+    [row] = Sqlitex.with_db(":memory:", fn(db) ->
+      Sqlitex.create_table(db, :users, id: {:integer, [:primary_key, :not_null]}, name: :text)
+      Sqlitex.query(db, "SELECT * FROM sqlite_master", into: %{})
+    end)
+
+    assert row.type == "table"
+    assert row.name == "users"
+    assert row.tbl_name == "users"
+    assert row.sql == "CREATE TABLE \"users\" (\"id\" integer PRIMARY KEY NOT NULL, \"name\" text )"
+  end
+
   test "a parameterized query", context do
     [row] = context[:golf_db] |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
     assert row == [id: 25, name: "Slothstronauts"]
