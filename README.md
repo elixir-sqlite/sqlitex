@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/mmmries/sqlitex.svg?branch=master)](https://travis-ci.org/mmmries/sqlitex)
+[![Inline docs](http://inch-ci.org/github/mmmries/sqlitex.svg?branch=master)](http://inch-ci.org/github/mmmries/sqlitex)
 
 Sqlitex
 =======
@@ -41,11 +42,6 @@ Sqlitex.Server.query(Sqlitex.Server,
                       INNER JOIN courses AS c ON g.course_id = c.id
                       ORDER BY g.played_at DESC LIMIT 10")
 ```
-
-Benchmarks
-==========
-
-I'm using [Benchfella](https://github.com/alco/benchfella) to keep track of our performance for some of the basic operations. If you want to check benchmark speeds just install benchfella and then run `mix bench` to run the stats.
 
 Plans
 =====
