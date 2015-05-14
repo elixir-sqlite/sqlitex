@@ -45,7 +45,7 @@ defmodule SqlitexTest do
     assert row.type == "table"
     assert row.name == "users"
     assert row.tbl_name == "users"
-    assert row.sql == "CREATE TABLE users (id integer PRIMARY KEY NOT NULL, name text )"
+    assert row.sql == "CREATE TABLE \"users\" (\"id\" integer PRIMARY KEY NOT NULL, \"name\" text )"
   end
 
   test "a parameterized query", context do

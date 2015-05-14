@@ -15,17 +15,22 @@ defmodule Sqlitex.SqlBuilder do
     tbl_options = get_opts_dict(table_opts, &table_opt/1)
     get_opt = &(Dict.get(tbl_options, &1, nil))
 
-    "CREATE #{get_opt.(:temp)} TABLE #{name} (#{get_columns_block(cols)} #{get_opt.(:primary_key)})"
+    "CREATE #{get_opt.(:temp)} TABLE \"#{name}\" (#{get_columns_block(cols)} #{get_opt.(:primary_key)})"
   end
 
   # Supported table options
   defp table_opt(:temporary), do: {:temp, "TEMP"}
   defp table_opt(:temp), do: {:temp, "TEMP"}
   defp table_opt({:primary_key, cols}) when is_list(cols) do
-    {:primary_key, ",PRIMARY KEY (" <> Enum.join(cols, ",") <> ")"}
+    {
+      :primary_key, ",PRIMARY KEY (" 
+      # Also quote the columns in a PRIMARY KEY list
+      <> (cols |> Enum.map(&(~s("#{&1}"))) |> Enum.join(","))
+      <> ")"
+    }
   end
   defp table_opt({:primary_key, col}) when is_atom(col) do
-    {:primary_key, ",PRIMARY KEY (" <> Atom.to_string(col) <> ")"}
+    {:primary_key, ",PRIMARY KEY (\"" <> Atom.to_string(col) <> "\")"}
   end
 
   # Supported column options
@@ -42,20 +47,20 @@ defmodule Sqlitex.SqlBuilder do
   # Create the sql fragment for the column definitions from the
   # passed keyword list
   defp get_columns_block(cols) do
-    Enum.map(cols, fn(col) ->
+    Enum.map_join(cols, ", ", fn(col) ->
       case col do
         # Column with name, type and constraint
         {name, {type, constraints}} ->
           col_options = get_opts_dict(constraints, &column_opt/1)
           get_opt = &(Dict.get(col_options, &1, nil))
 
-          [name, type, get_opt.(:primary_key), get_opt.(:not_null), get_opt.(:autoincrement)]
+          [~s("#{name}"), type, get_opt.(:primary_key), get_opt.(:not_null), get_opt.(:autoincrement)]
             |> Enum.filter(&(&1))
             |> Enum.join(" ")
         # Column with name and type
         {name, type} ->
-          "#{name} #{type}"
+          ~s("#{name}" #{type})
       end
-    end) |> Enum.join(", ")
+    end)
   end
 end
