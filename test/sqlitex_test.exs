@@ -79,4 +79,13 @@ defmodule SqlitexTest do
     assert [] == Sqlitex.query(db, "CREATE TABLE t (a INTEGER, b INTEGER, c INTEGER)")
     Sqlitex.close(db)
   end
+
+  test "it handles different cases of column types" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (inserted_at DATETIME, updated_at DateTime)")
+    :ok = Sqlitex.exec(db, "INSERT INTO t VALUES ('2012-10-14 05:46:28.312941', '2012-10-14 05:46:35.758815')")
+    [row] = Sqlitex.query(db, "SELECT inserted_at, updated_at FROM t")
+    assert row[:inserted_at] == {{2012, 10, 14}, {5, 46, 28}}
+    assert row[:updated_at] == {{2012, 10, 14}, {5, 46, 35}}
+  end
 end
