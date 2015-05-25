@@ -6,6 +6,9 @@ defmodule Sqlitex.Row do
   end
 
   defp build_row(types, columns, row, into) do
+    types = Enum.map(types, fn type ->
+      type |> Atom.to_string |> String.downcase
+    end)
     values = row |> Tuple.to_list |> Enum.zip(types) |> Enum.map(&translate_value/1)
 
     columns
@@ -13,7 +16,7 @@ defmodule Sqlitex.Row do
       |> Enum.into(into)
   end
 
-  defp translate_value({str, :datetime}) do
+  defp translate_value({str, "datetime"}) do
     <<yr::binary-size(4), "-", mo::binary-size(2), "-", da::binary-size(2), " ", hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", _fr::binary-size(6)>> = str
     {{String.to_integer(yr), String.to_integer(mo), String.to_integer(da)},{String.to_integer(hr), String.to_integer(mi), String.to_integer(se)}}
   end
