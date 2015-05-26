@@ -25,6 +25,11 @@ defmodule SqlitexTest do
     Sqlitex.Server.stop(:sql)
   end
 
+  test "that it returns an error for a bad query" do
+    {:ok, _} = Sqlitex.Server.start_link(":memory:", name: :bad_create)
+    assert {:error, {:sqlite_error, 'near "WHAT": syntax error'}} == Sqlitex.Server.query(:bad_create, "CREATE WHAT")
+  end
+
   test "a basic query returns a list of keyword lists", context do
     [row] = context[:golf_db] |> Sqlitex.query("SELECT * FROM players ORDER BY id LIMIT 1")
     assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]
