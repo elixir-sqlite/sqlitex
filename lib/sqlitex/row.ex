@@ -21,6 +21,9 @@ defmodule Sqlitex.Row do
     {{String.to_integer(yr), String.to_integer(mo), String.to_integer(da)},{String.to_integer(hr), String.to_integer(mi), String.to_integer(se)}}
   end
 
+  defp translate_value({0, "boolean"}), do: false
+  defp translate_value({1, "boolean"}), do: true
+
   defp translate_value({:undefined,_type}) do
     nil
   end

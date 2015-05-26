@@ -58,14 +58,20 @@ defmodule Sqlitex do
   end
 
   defp query_options(opts) do
-    params = opts
+    params = bindings(opts)
+    into = Keyword.get(opts, :into, [])
+    {params, into}
+  end
+
+  defp bindings(opts) do
+    opts
     |> Keyword.get(:bind, [])
     |> Enum.map(fn
       nil -> :undefined
+      true -> 1
+      false -> 0
       other -> other
     end)
-    into = Keyword.get(opts, :into, [])
-    {params, into}
   end
 
   defp return_rows_or_error(_, _, {:error, _} = error, _), do: error

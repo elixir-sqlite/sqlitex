@@ -94,11 +94,21 @@ defmodule SqlitexTest do
     assert row[:updated_at] == {{2012, 10, 14}, {5, 46, 35}}
   end
 
-  test "it returns nil" do
+  test "it inserts nil" do
     {:ok, db} = Sqlitex.open(":memory:")
     :ok = Sqlitex.exec(db, "CREATE TABLE t (a INTEGER)")
     [] = Sqlitex.query(db, "INSERT INTO t VALUES (?1)", bind: [nil])
     [row] = Sqlitex.query(db, "SELECT a FROM t")
     assert row[:a] == nil
+  end
+
+  test "it inserts boolean values" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (id INTEGER, a BOOLEAN)")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?1, ?2)", bind: [1, true])
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?1, ?2)", bind: [2, false])
+    [row1, row2] = Sqlitex.query(db, "SELECT a FROM t ORDER BY id")
+    assert row1[:a] == true
+    assert row2[:a] == false
   end
 end
