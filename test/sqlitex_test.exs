@@ -111,4 +111,12 @@ defmodule SqlitexTest do
     assert row1[:a] == true
     assert row2[:a] == false
   end
+
+  test "it inserts Erlang datetime tuples" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (dt DATETIME)")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [{{1985, 10, 26}, {1, 20, 0}}])
+    [row] = Sqlitex.query(db, "SELECT dt FROM t")
+    assert row[:dt] == {{1985, 10, 26}, {1, 20, 0}}
+  end
 end
