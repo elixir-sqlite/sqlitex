@@ -50,11 +50,14 @@ defmodule Sqlitex do
 
   defp bind_and_query(statement, opts) do
     {params, into} = query_options(opts)
-    :ok = :esqlite3.bind(statement, params)
-    types = :esqlite3.column_types(statement)
-    columns = :esqlite3.column_names(statement)
-    rows = :esqlite3.fetchall(statement)
-    return_rows_or_error(types, columns, rows, into)
+    case :esqlite3.bind(statement, params) do
+      {:error, _}=error -> error
+      :ok ->
+        types = :esqlite3.column_types(statement)
+        columns = :esqlite3.column_names(statement)
+        rows = :esqlite3.fetchall(statement)
+        return_rows_or_error(types, columns, rows, into)
+    end
   end
 
   defp query_options(opts) do
