@@ -14,14 +14,14 @@ defmodule SqlitexTest do
   test "server basic query" do
     {:ok, conn} = Sqlitex.Server.start_link(@shared_cache)
     [row] = Sqlitex.Server.query(conn, "SELECT * FROM players ORDER BY id LIMIT 1")
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318107}}, updated_at: {{2013,09,06},{22,29,36,610911}}, type: nil]
     Sqlitex.Server.stop(conn)
   end
 
   test "server basic query by name" do
     {:ok, _} = Sqlitex.Server.start_link(@shared_cache, name: :sql)
     [row] = Sqlitex.Server.query(:sql, "SELECT * FROM players ORDER BY id LIMIT 1")
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318107}}, updated_at: {{2013,09,06},{22,29,36,610911}}, type: nil]
     Sqlitex.Server.stop(:sql)
   end
 
@@ -32,12 +32,12 @@ defmodule SqlitexTest do
 
   test "a basic query returns a list of keyword lists", context do
     [row] = context[:golf_db] |> Sqlitex.query("SELECT * FROM players ORDER BY id LIMIT 1")
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318107}}, updated_at: {{2013,09,06},{22,29,36,610911}}, type: nil]
   end
 
   test "a basic query returns a list of maps when into: %{} is given", context do
     [row] = context[:golf_db] |> Sqlitex.query("SELECT * FROM players ORDER BY id LIMIT 1", into: %{})
-    assert row == %{id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil}
+    assert row == %{id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318107}}, updated_at: {{2013,09,06},{22,29,36,610911}}, type: nil}
   end
 
   test "with_db" do
@@ -45,7 +45,7 @@ defmodule SqlitexTest do
       Sqlitex.query(db, "SELECT * FROM players ORDER BY id LIMIT 1")
     end)
 
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318107}}, updated_at: {{2013,09,06},{22,29,36,610911}}, type: nil]
   end
 
   test "table creation works as expected" do
@@ -90,8 +90,8 @@ defmodule SqlitexTest do
     :ok = Sqlitex.exec(db, "CREATE TABLE t (inserted_at DATETIME, updated_at DateTime)")
     :ok = Sqlitex.exec(db, "INSERT INTO t VALUES ('2012-10-14 05:46:28.312941', '2012-10-14 05:46:35.758815')")
     [row] = Sqlitex.query(db, "SELECT inserted_at, updated_at FROM t")
-    assert row[:inserted_at] == {{2012, 10, 14}, {5, 46, 28}}
-    assert row[:updated_at] == {{2012, 10, 14}, {5, 46, 35}}
+    assert row[:inserted_at] == {{2012, 10, 14}, {5, 46, 28, 312941}}
+    assert row[:updated_at] == {{2012, 10, 14}, {5, 46, 35, 758815}}
   end
 
   test "it inserts nil" do
@@ -115,8 +115,8 @@ defmodule SqlitexTest do
   test "it inserts Erlang datetime tuples" do
     {:ok, db} = Sqlitex.open(":memory:")
     :ok = Sqlitex.exec(db, "CREATE TABLE t (dt DATETIME)")
-    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [{{1985, 10, 26}, {1, 20, 0}}])
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [{{1985, 10, 26}, {1, 20, 0, 666}}])
     [row] = Sqlitex.query(db, "SELECT dt FROM t")
-    assert row[:dt] == {{1985, 10, 26}, {1, 20, 0}}
+    assert row[:dt] == {{1985, 10, 26}, {1, 20, 0, 666}}
   end
 end

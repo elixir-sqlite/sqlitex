@@ -71,16 +71,15 @@ defmodule Sqlitex do
       nil -> :undefined
       true -> 1
       false -> 0
-      {{_yr, _mo, _da}, {_hr, _mi, _se}}=datetime -> datetime_to_string(datetime)
-      {{yr, mo, da}, {hr, mi, se, _usecs}} -> datetime_to_string({{yr, mo, da}, {hr, mi, se}})
+      datetime={{_yr, _mo, _da}, {_hr, _mi, _se, _usecs}} -> datetime_to_string(datetime)
       other -> other
     end)
   end
 
   # Translate the given Erlang datetime tuple to an appropriate string for
   # SQLite.  Microseconds are zeroed.
-  defp datetime_to_string({{yr, mo, da}, {hr, mi, se}}) do
-    [zero_pad(yr, 4), "-", zero_pad(mo, 2), "-", zero_pad(da, 2), " ", zero_pad(hr, 2), ":", zero_pad(mi, 2), ":", zero_pad(se, 2), ".000000"]
+  defp datetime_to_string({{yr, mo, da}, {hr, mi, se, usecs}}) do
+    [zero_pad(yr, 4), "-", zero_pad(mo, 2), "-", zero_pad(da, 2), " ", zero_pad(hr, 2), ":", zero_pad(mi, 2), ":", zero_pad(se, 2), ".", zero_pad(usecs, 6)]
     |> Enum.join
   end
 
