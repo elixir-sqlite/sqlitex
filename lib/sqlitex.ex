@@ -1,6 +1,4 @@
 defmodule Sqlitex do
-  alias Sqlitex.Query, as: Q
-
   def close(db) do
     :esqlite3.close(db)
   end
@@ -21,12 +19,7 @@ defmodule Sqlitex do
     :esqlite3.exec(sql, db)
   end
 
-  def query(db, sql, opts \\ []) do
-    Q.prepare(sql, db)
-      |> Q.bind_values(opts)
-      |> Q.execute(opts)
-      |> Q.to_rows
-  end
+  def query(db, sql, opts \\ []), do: Sqlitex.Query.query(db, sql, opts)
 
   @doc """
   Create a new table `name` where `table_opts` are a list of table constraints
