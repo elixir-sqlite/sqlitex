@@ -1,4 +1,6 @@
 defmodule Sqlitex do
+  alias Sqlitex.Query, as: Q
+
   def close(db) do
     :esqlite3.close(db)
   end
@@ -20,10 +22,10 @@ defmodule Sqlitex do
   end
 
   def query(db, sql, opts \\ []) do
-    case :esqlite3.prepare(sql, db) do
-      {:ok, statement} -> bind_and_query(statement, opts)
-      {:error, _}=error -> error
-    end
+    Q.prepare(sql, db)
+      |> Q.bind_values(opts)
+      |> Q.execute(opts)
+      |> Q.to_rows
   end
 
   @doc """
@@ -46,54 +48,5 @@ defmodule Sqlitex do
   def create_table(db, name, table_opts \\ [], cols) do
     stmt = Sqlitex.SqlBuilder.create_table(name, table_opts, cols)
     exec(db, stmt)
-  end
-
-  defp bind_and_query(statement, opts) do
-    {params, into} = query_options(opts)
-    case :esqlite3.bind(statement, params) do
-      {:error, _}=error -> error
-      :ok ->
-        types = :esqlite3.column_types(statement)
-        columns = :esqlite3.column_names(statement)
-        rows = :esqlite3.fetchall(statement)
-        return_rows_or_error(types, columns, rows, into)
-    end
-  end
-
-  defp query_options(opts) do
-    params = opts |> Keyword.get(:bind, []) |> translate_bindings
-    into = Keyword.get(opts, :into, [])
-    {params, into}
-  end
-
-  defp translate_bindings(params) do
-    Enum.map(params, fn
-      nil -> :undefined
-      true -> 1
-      false -> 0
-      datetime={{_yr, _mo, _da}, {_hr, _mi, _se, _usecs}} -> datetime_to_string(datetime)
-      other -> other
-    end)
-  end
-
-  # Translate the given Erlang datetime tuple to an appropriate string for
-  # SQLite.  Microseconds are zeroed.
-  defp datetime_to_string({{yr, mo, da}, {hr, mi, se, usecs}}) do
-    [zero_pad(yr, 4), "-", zero_pad(mo, 2), "-", zero_pad(da, 2), " ", zero_pad(hr, 2), ":", zero_pad(mi, 2), ":", zero_pad(se, 2), ".", zero_pad(usecs, 6)]
-    |> Enum.join
-  end
-
-  defp zero_pad(num, len) do
-    str = Integer.to_string num
-    String.duplicate("0", len - String.length(str)) <> str
-  end
-
-  defp return_rows_or_error(_, _, {:error, _} = error, _), do: error
-  defp return_rows_or_error({:error, :no_columns}, columns, rows, into), do: return_rows_or_error({}, columns, rows, into)
-  defp return_rows_or_error({:error, _} = error, _columns, _rows, _into), do: error
-  defp return_rows_or_error(types, {:error, :no_columns}, rows, into), do: return_rows_or_error(types, {}, rows, into)
-  defp return_rows_or_error(_types, {:error, _} = error, _rows, _into), do: error
-  defp return_rows_or_error(types, columns, rows, into) do
-    Sqlitex.Row.from(Tuple.to_list(types), Tuple.to_list(columns), rows, into)
   end
 end
