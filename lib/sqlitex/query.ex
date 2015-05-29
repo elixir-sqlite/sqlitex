@@ -1,9 +1,11 @@
 defmodule Sqlitex.Query do
+  use Pipe
+
   def query(db, sql, opts \\ []) do
-    prepare(sql, db)
-      |> bind_values(opts)
-      |> execute(opts)
-      |> to_rows
+    pipe_matching {:ok, _},
+        prepare(sql, db)
+        |> bind_values(opts)
+        |> execute(opts)
   end
 
   defp bind_values({:error, _}=error, _opts), do: error
@@ -26,7 +28,7 @@ defmodule Sqlitex.Query do
     types = :esqlite3.column_types(statement)
     columns = :esqlite3.column_names(statement)
     data = :esqlite3.fetchall(statement)
-    {types, columns, data, into}
+    to_rows(types, columns, data, into)
   end
 
   defp into_from_opts(opts), do: Keyword.get(opts, :into, [])
@@ -35,12 +37,12 @@ defmodule Sqlitex.Query do
 
   defp prepare(sql, database), do: :esqlite3.prepare(sql, database)
 
-  defp to_rows({_,_,{:error,_}=error,_}), do: error
-  defp to_rows({{:error, :no_columns}, columns, rows, into}), do: to_rows({{}, columns, rows, into})
-  defp to_rows({{:error, _}=error, _columns, _rows, _into}), do: error
-  defp to_rows({types, {:error, :no_columns}, rows, into}), do: to_rows({types, {}, rows, into})
-  defp to_rows({_types, {:error, _}=error, _rows, _into}), do: error
-  defp to_rows({types, columns, rows, into}) do
+  defp to_rows(_,_,{:error,_}=error,_), do: error
+  defp to_rows({:error, :no_columns}, columns, rows, into), do: to_rows({}, columns, rows, into)
+  defp to_rows({:error, _}=error, _columns, _rows, _into), do: error
+  defp to_rows(types, {:error, :no_columns}, rows, into), do: to_rows(types, {}, rows, into)
+  defp to_rows(_types, {:error, _}=error, _rows, _into), do: error
+  defp to_rows(types, columns, rows, into) do
     Sqlitex.Row.from(Tuple.to_list(types), Tuple.to_list(columns), rows, into)
   end
 

@@ -21,6 +21,7 @@ defmodule Sqlitex.Mixfile do
   defp deps do
     [
       {:esqlite, "~> 0.1.0"},
+      {:pipe, "~> 0.0.1"},
 
       {:earmark, ">= 0.0.0", only: :dev},
       {:ex_doc, "~> 0.7", only: :dev},
