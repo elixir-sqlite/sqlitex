@@ -11,7 +11,7 @@ defmodule Sqlitex.Query do
             statement: nil
 
   def query(db, sql, opts \\ []) do
-    pipe_matching {:ok, %Sqlitex.Query{}},
+    pipe_matching {:ok, _},
       {:ok, %Sqlitex.Query{bindings: bindings_from_opts(opts), into: into_from_opts(opts), database: db, sql: sql}}
         |> prepare
         |> bind_values
