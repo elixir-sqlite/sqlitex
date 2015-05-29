@@ -8,7 +8,6 @@ defmodule Sqlitex.Query do
         |> execute(opts)
   end
 
-  defp bind_values({:error, _}=error, _opts), do: error
   defp bind_values({:ok, statement}, opts) do
     params = params_from_opts(opts)
     case :esqlite3.bind(statement, params) do
@@ -22,7 +21,6 @@ defmodule Sqlitex.Query do
     |> Enum.join
   end
 
-  defp execute({:error,_}=error, _opts), do: {error, {}, {}, []}
   defp execute({:ok, statement}, opts) do
     into = into_from_opts(opts)
     types = :esqlite3.column_types(statement)
