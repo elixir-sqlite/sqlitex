@@ -1,18 +1,48 @@
 defmodule Sqlitex.Query do
   use Pipe
 
+  defstruct bindings: [],
+            column_names: [],
+            column_types: [],
+            database: nil,
+            into: [],
+            raw_data: [],
+            sql: nil,
+            statement: nil
+
   def query(db, sql, opts \\ []) do
-    pipe_matching {:ok, _},
-        prepare(sql, db)
-        |> bind_values(opts)
-        |> execute(opts)
+    pipe_matching {:ok, %Sqlitex.Query{}},
+      {:ok, %Sqlitex.Query{bindings: bindings_from_opts(opts), into: into_from_opts(opts), database: db, sql: sql}}
+        |> prepare
+        |> bind_values
+        |> column_types
+        |> column_names
+        |> fetch_data
+        |> into_rows
   end
 
-  defp bind_values({:ok, statement}, opts) do
-    params = params_from_opts(opts)
-    case :esqlite3.bind(statement, params) do
+  defp bind_values({:ok, %Sqlitex.Query{bindings: bindings, statement: statement}=query}) do
+    case :esqlite3.bind(statement, bindings) do
       {:error,_}=error -> error
-      :ok -> {:ok, statement}
+      :ok -> {:ok, query}
+    end
+  end
+
+  defp bindings_from_opts(opts), do: opts |> Keyword.get(:bind, []) |> translate_bindings
+
+  defp column_names({:ok, %Sqlitex.Query{statement: statement}=query}) do
+    case :esqlite3.column_names(statement) do
+      {:error, :no_columns} -> {:ok, %Sqlitex.Query{query | column_names: {}}}
+      {:error, _}=other -> other
+      names -> {:ok, %Sqlitex.Query{query | column_names: names}}
+    end
+  end
+
+  defp column_types({:ok, %Sqlitex.Query{statement: statement}=query}) do
+    case :esqlite3.column_types(statement) do
+      {:error, :no_columns} -> {:ok, %Sqlitex.Query{query | column_types: {}}}
+      {:error, _}=other -> other
+      types -> {:ok, %Sqlitex.Query{query | column_types: types}}
     end
   end
 
@@ -21,27 +51,24 @@ defmodule Sqlitex.Query do
     |> Enum.join
   end
 
-  defp execute({:ok, statement}, opts) do
-    into = into_from_opts(opts)
-    types = :esqlite3.column_types(statement)
-    columns = :esqlite3.column_names(statement)
-    data = :esqlite3.fetchall(statement)
-    to_rows(types, columns, data, into)
+  defp fetch_data({:ok, %Sqlitex.Query{statement: statement}=query}) do
+    case :esqlite3.fetchall(statement) do
+      {:error,_}=other -> other
+      raw_data -> {:ok, %Sqlitex.Query{query | raw_data: raw_data}}
+    end
   end
 
   defp into_from_opts(opts), do: Keyword.get(opts, :into, [])
 
-  defp params_from_opts(opts), do: opts |> Keyword.get(:bind, []) |> translate_bindings
+  defp prepare({:ok, %Sqlitex.Query{sql: sql, database: database}=query}) do
+    case :esqlite3.prepare(sql, database) do
+      {:ok, statement} -> {:ok, %Sqlitex.Query{query | statement: statement}}
+      other -> other
+    end
+  end
 
-  defp prepare(sql, database), do: :esqlite3.prepare(sql, database)
-
-  defp to_rows(_,_,{:error,_}=error,_), do: error
-  defp to_rows({:error, :no_columns}, columns, rows, into), do: to_rows({}, columns, rows, into)
-  defp to_rows({:error, _}=error, _columns, _rows, _into), do: error
-  defp to_rows(types, {:error, :no_columns}, rows, into), do: to_rows(types, {}, rows, into)
-  defp to_rows(_types, {:error, _}=error, _rows, _into), do: error
-  defp to_rows(types, columns, rows, into) do
-    Sqlitex.Row.from(Tuple.to_list(types), Tuple.to_list(columns), rows, into)
+  defp into_rows({:ok, %Sqlitex.Query{column_types: types, column_names: names, raw_data: raw_data, into: into}}) do
+    Sqlitex.Row.from(Tuple.to_list(types), Tuple.to_list(names), raw_data, into)
   end
 
   defp translate_bindings(params) do
