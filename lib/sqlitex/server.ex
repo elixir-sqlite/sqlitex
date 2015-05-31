@@ -40,12 +40,12 @@ defmodule Sqlitex.Server do
 
   ## Public API
 
-  def exec(pid, sql) do
-    GenServer.call(pid, {:exec, sql})
+  def exec(pid, sql, opts \\ []) do
+    GenServer.call(pid, {:exec, sql}, timeout(opts))
   end
 
   def query(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:query, sql, opts})
+    GenServer.call(pid, {:query, sql, opts}, timeout(opts))
   end
 
   def create_table(pid, name, table_opts \\ [], cols) do
@@ -55,4 +55,8 @@ defmodule Sqlitex.Server do
   def stop(pid) do
     GenServer.cast(pid, :stop)
   end
+
+  ## Helpers
+
+  defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
 end
