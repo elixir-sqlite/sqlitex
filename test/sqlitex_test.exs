@@ -119,4 +119,10 @@ defmodule SqlitexTest do
     [row] = Sqlitex.query(db, "SELECT dt FROM t")
     assert row[:dt] == {{1985, 10, 26}, {1, 20, 0, 666}}
   end
+
+  test "server query times out" do
+    {:ok, conn} = Sqlitex.Server.start_link(":memory:")
+    assert match?({:timeout, _},
+      catch_exit(Sqlitex.Server.query(conn, "SELECT * FROM sqlite_master", timeout: 0)))
+  end
 end
