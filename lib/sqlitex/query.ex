@@ -77,6 +77,7 @@ defmodule Sqlitex.Query do
       true -> 1
       false -> 0
       datetime={{_yr, _mo, _da}, {_hr, _mi, _se, _usecs}} -> datetime_to_string(datetime)
+      %Decimal{sign: sign, coef: coef, exp: exp} -> sign * coef * :math.pow(10, exp)
       other -> other
     end)
   end

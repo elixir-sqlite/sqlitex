@@ -30,6 +30,8 @@ defmodule Sqlitex.Row do
   defp translate_value({0, "boolean"}), do: false
   defp translate_value({1, "boolean"}), do: true
 
+  defp translate_value({float, "decimal"}), do: Decimal.new(float)
+
   defp translate_value({val, _type}) do
     val
   end

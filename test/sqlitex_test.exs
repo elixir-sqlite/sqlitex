@@ -125,4 +125,13 @@ defmodule SqlitexTest do
     assert match?({:timeout, _},
       catch_exit(Sqlitex.Server.query(conn, "SELECT * FROM sqlite_master", timeout: 0)))
   end
+
+  test "decimal types" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (f DECIMAL)")
+    d = Decimal.new(1.123)
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [d])
+    [row] = Sqlitex.query(db, "SELECT f FROM t")
+    assert row[:f] == d
+  end
 end
