@@ -125,4 +125,27 @@ defmodule SqlitexTest do
     assert match?({:timeout, _},
       catch_exit(Sqlitex.Server.query(conn, "SELECT * FROM sqlite_master", timeout: 0)))
   end
+
+  test "decimal types" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (f DECIMAL)")
+    d = Decimal.new(1.123)
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [d])
+    [row] = Sqlitex.query(db, "SELECT f FROM t")
+    assert row[:f] == d
+  end
+
+  test "decimal types with scale and precision" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (id INTEGER, f DECIMAL(3,2))")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?,?)", bind: [1, Decimal.new(1.123)])
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?,?)", bind: [2, Decimal.new(244.37)])
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?,?)", bind: [3, Decimal.new(1997)])
+
+    # results should be truncated to the appropriate precision and scale:
+    Sqlitex.query(db, "SELECT f FROM t ORDER BY id")
+    |> Enum.map(fn row -> row[:f] end)
+    |> Enum.zip([Decimal.new(1.12), Decimal.new(244), Decimal.new(1990)])
+    |> Enum.each(fn {res, ans} -> assert Decimal.equal?(res, ans) end)
+  end
 end
