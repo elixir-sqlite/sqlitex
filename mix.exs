@@ -20,7 +20,7 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, "~> 0.1.0"},
+      {:esqlite, "~> 0.2.0"},
       {:pipe, "~> 0.0.2"},
       {:decimal, "~> 1.1.0"},
 
