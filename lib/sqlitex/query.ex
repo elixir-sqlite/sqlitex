@@ -32,7 +32,6 @@ defmodule Sqlitex.Query do
 
   defp column_names({:ok, %Sqlitex.Query{statement: statement}=query}) do
     case :esqlite3.column_names(statement) do
-      {:error, :no_columns} -> {:ok, %Sqlitex.Query{query | column_names: {}}}
       {:error, _}=other -> other
       names -> {:ok, %Sqlitex.Query{query | column_names: names}}
     end
@@ -40,7 +39,6 @@ defmodule Sqlitex.Query do
 
   defp column_types({:ok, %Sqlitex.Query{statement: statement}=query}) do
     case :esqlite3.column_types(statement) do
-      {:error, :no_columns} -> {:ok, %Sqlitex.Query{query | column_types: {}}}
       {:error, _}=other -> other
       types -> {:ok, %Sqlitex.Query{query | column_types: types}}
     end
