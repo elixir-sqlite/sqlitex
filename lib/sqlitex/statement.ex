@@ -47,16 +47,9 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Prepare a Sqlitex.Statement
+  Same as `prepare/2` but raises an error on error.
 
-  ## Parameters
-
-  * `db` - The database to prepare the statement for.
-  * `sql` - The SQL of the statement to prepare.
-
-  ## Returns
-  * `statement` on success
-  * Errors on failure.
+  Returns a new statement otherwise.
   """
   def prepare!(db, sql) do
     {:ok, statement} = prepare(db, sql)
@@ -94,17 +87,9 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Binds values to a Sqlitex.Statement
+  Same as `bind_values/2` but raises an error on error.
 
-  ## Parameters
-
-  * `statement` - The statement to bind values into.
-  * `values` - A list of values to bind into the statement.
-  ## Returns
-
-  ## Returns
-  * `statement` on success
-  * Errors on failure.
+  Returns the statement otherwise.
   """
   def bind_values!(statement, values) do
     {:ok, statement} = bind_values(statement, values)
@@ -139,19 +124,9 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Fetches all rows using a statement.
+  Same as `fetch_all/2` but raises an error on error.
 
-  Should be called after the statement has been bound.
-
-  ## Parameters
-
-  * `statement` - The statement to run.
-  * `into` - The collection to put the results into. Defaults to an empty list.
-
-  ## Returns
-
-  * `results` on success
-  * Errors on failure.
+  Returns the results otherwise.
   """
   def fetch_all!(statement, into \\ []) do
     {:ok, results} = fetch_all(statement, into)
