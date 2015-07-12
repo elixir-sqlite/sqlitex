@@ -3,6 +3,25 @@ defmodule Sqlitex.Query do
 
   alias Sqlitex.Statement
 
+  @doc """
+  Runs a query and returns the results.
+
+  ## Parameters
+
+  * `db` - A sqlite database.
+  * `sql` - The query to run as a string.
+  * `opts` - Options to pass into the query.  See below for details.
+
+  ## Options
+
+  * `bind` - If your query has parameters in it, you should provide the options
+    to bind as a list.
+  * `into` - The collection to put results into.  This defaults to a list.
+
+  ## Returns
+  * {:ok, results} on success
+  * {:error, _} on failure.
+  """
   def query(db, sql, opts \\ []) do
     pipe_with &pipe_ok/2,
       Statement.prepare(db, sql)
@@ -10,6 +29,11 @@ defmodule Sqlitex.Query do
       |> Statement.fetch_all(Dict.get(opts, :into, []))
   end
 
+  @doc """
+  Same as `query/3` but raises an error on error.
+
+  Returns the results otherwise.
+  """
   def query!(db, sql, opts \\ []) do
     {:ok, results} = query(db, sql, opts)
     results
