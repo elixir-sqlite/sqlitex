@@ -140,6 +140,9 @@ defmodule SqlitexTest do
     {:ok, conn} = Sqlitex.Server.start_link(":memory:")
     assert match?({:timeout, _},
       catch_exit(Sqlitex.Server.query(conn, "SELECT * FROM sqlite_master", timeout: 0)))
+    receive do # wait for the timed-out message
+      msg -> msg
+    end
   end
 
   test "decimal types" do
