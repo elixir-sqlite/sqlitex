@@ -22,9 +22,14 @@ defmodule Sqlitex.Row do
     nil
   end
 
-  defp translate_value({str, "datetime"}) when is_binary(str) do
-    <<yr::binary-size(4), "-", mo::binary-size(2), "-", da::binary-size(2), " ", hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary-size(6)>> = str
-    {{String.to_integer(yr), String.to_integer(mo), String.to_integer(da)},{String.to_integer(hr), String.to_integer(mi), String.to_integer(se), String.to_integer(fr)}}
+  defp translate_value({date, "date"}) when is_binary(date), do: to_date(date)
+
+  defp translate_value({time, "time"}) when is_binary(time), do: to_time(time)
+
+  # datetime format is "YYYY-MM-DD HH:MM:SS.FFFFFF"
+  defp translate_value({datetime, "datetime"}) when is_binary(datetime) do
+    [date, time] = String.split(datetime)
+    {to_date(date), to_time(time)}
   end
 
   defp translate_value({0, "boolean"}), do: false
@@ -44,5 +49,15 @@ defmodule Sqlitex.Row do
 
   defp translate_value({val, _type}) do
     val
+  end
+
+  defp to_date(date) do
+    <<yr::binary-size(4), "-", mo::binary-size(2), "-", da::binary-size(2)>> = date
+    {String.to_integer(yr), String.to_integer(mo), String.to_integer(da)}
+  end
+
+  defp to_time(time) do
+    <<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary-size(6)>> = time
+    {String.to_integer(hr), String.to_integer(mi), String.to_integer(se), String.to_integer(fr)}
   end
 end

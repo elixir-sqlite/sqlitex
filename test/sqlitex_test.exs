@@ -112,6 +112,22 @@ defmodule SqlitexTest do
     assert row2[:a] == false
   end
 
+  test "it inserts Erlang date types" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (d DATE)")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [{1985, 10, 26}])
+    [row] = Sqlitex.query(db, "SELECT d FROM t")
+    assert row[:d] == {1985, 10, 26}
+  end
+
+  test "it inserts Elixir time types" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (t TIME)")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [{1, 20, 0, 666}])
+    [row] = Sqlitex.query(db, "SELECT t FROM t")
+    assert row[:t] == {1, 20, 0, 666}
+  end
+
   test "it inserts Erlang datetime tuples" do
     {:ok, db} = Sqlitex.open(":memory:")
     :ok = Sqlitex.exec(db, "CREATE TABLE t (dt DATETIME)")
@@ -124,6 +140,9 @@ defmodule SqlitexTest do
     {:ok, conn} = Sqlitex.Server.start_link(":memory:")
     assert match?({:timeout, _},
       catch_exit(Sqlitex.Server.query(conn, "SELECT * FROM sqlite_master", timeout: 0)))
+    receive do # wait for the timed-out message
+      msg -> msg
+    end
   end
 
   test "decimal types" do
