@@ -2,6 +2,15 @@ defmodule Sqlitex.Statement do
   @moduledoc """
   Provides an interface for working with sqlite prepared statements.
 
+  Care should be taken when using prepared statements directly - they are not
+  immutable objects like most things in Elixir. Sharing a statement between
+  different processes can cause problems if the processes accidentally
+  interleave operations on the statement. It's a good idea to create different
+  statements per process, or to wrap the statements up in a GenServer to prevent
+  interleaving operations.
+
+  ## Example
+
   ```
   iex(2)> {:ok, db} = Sqlitex.open(":memory:")
   iex(3)> Sqlitex.query(db, "CREATE TABLE data (id, name);")
