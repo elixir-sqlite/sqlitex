@@ -30,7 +30,7 @@ defmodule Sqlitex.Query do
   end
 
   @doc """
-  Same as `query/3` but raises an error on error.
+  Same as `query/3` but raises a Sqlitex.QueryError on error.
 
   Returns the results otherwise.
   """

@@ -8,8 +8,8 @@ defmodule Sqlitex.Statement do
   []
   iex(6)> {:ok, statement} = Sqlitex.Statement.prepare(db, "INSERT INTO data VALUES (?, ?);")
   iex(7)> Sqlitex.Statement.bind_values(statement, [1, "hello"])
-  iex(8)> Sqlitex.Statement.fetch_all(statement)
-  []
+  iex(8)> Sqlitex.Statement.exec(statement)
+  :ok
   iex(9)> {:ok, statement} = Sqlitex.Statement.prepare(db, "SELECT * FROM data;")
   iex(10)> Sqlitex.Statement.fetch_all(statement)
   [[id: 1, name: "hello"]]
@@ -47,7 +47,7 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Same as `prepare/2` but raises an error on error.
+  Same as `prepare/2` but raises a Sqlitex.Statement.PrepareError on error.
 
   Returns a new statement otherwise.
   """
@@ -89,7 +89,7 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Same as `bind_values/2` but raises an error on error.
+  Same as `bind_values/2` but raises a Sqlitex.Statement.BindValuesError on error.
 
   Returns the statement otherwise.
   """
@@ -128,7 +128,7 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Same as `fetch_all/2` but raises an error on error.
+  Same as `fetch_all/2` but raises a Sqlitex.Statement.FetchAllError on error.
 
   Returns the results otherwise.
   """
@@ -136,6 +136,41 @@ defmodule Sqlitex.Statement do
     case fetch_all(statement, into) do
       {:ok, results} -> results
       {:error, reason} -> raise Sqlitex.Statement.FetchAllError, reason: reason
+    end
+  end
+
+  @doc """
+  Runs a statement that returns no results.
+
+  Should be called after the statement has been bound.
+
+  ## Parameters
+
+  * `statement` - The statement to run.
+
+  ## Returns
+
+  * `:ok`
+  * `{:error, error}`
+  """
+  def exec(statement) do
+    case :esqlite3.step(statement.statement) do
+      # esqlite3.step returns some odd values, so lets translate them:
+      :"$done" -> :ok
+      :"$busy" -> {:error, {:busy, "Sqlite database is busy"}}
+      other -> other
+    end
+  end
+
+  @doc """
+  Same as `exec/1` but raises a Sqlitex.Statement.ExecError on error.
+
+  Returns :ok otherwise.
+  """
+  def exec!(statement) do
+    case exec(statement) do
+      :ok -> :ok
+      {:error, reason} -> raise Sqlitex.Statement.ExecError, reason: reason
     end
   end
 

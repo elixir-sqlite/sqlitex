@@ -29,3 +29,11 @@ defmodule Sqlitex.Statement.FetchAllError do
     "Fetch all failed: #{inspect error.reason}"
   end
 end
+
+defmodule Sqlitex.Statement.ExecError do
+  defexception [:reason]
+
+  def message(error) do
+    "Exec failed: #{inspect error.reason}"
+  end
+end
