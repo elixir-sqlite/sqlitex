@@ -52,8 +52,10 @@ defmodule Sqlitex.Statement do
   Returns a new statement otherwise.
   """
   def prepare!(db, sql) do
-    {:ok, statement} = prepare(db, sql)
-    statement
+    case prepare(db, sql) do
+      {:ok, statement} -> statement
+      {:error, reason} -> raise Sqlitex.Statement.PrepareError, reason: reason
+    end
   end
 
   @doc """
@@ -92,8 +94,10 @@ defmodule Sqlitex.Statement do
   Returns the statement otherwise.
   """
   def bind_values!(statement, values) do
-    {:ok, statement} = bind_values(statement, values)
-    statement
+    case bind_values(statement, values) do
+      {:ok, statement} -> statement
+      {:error, reason} -> raise Sqlitex.Statement.BindValuesError, reason: reason
+    end
   end
 
   @doc """
@@ -129,8 +133,10 @@ defmodule Sqlitex.Statement do
   Returns the results otherwise.
   """
   def fetch_all!(statement, into \\ []) do
-    {:ok, results} = fetch_all(statement, into)
-    results
+    case fetch_all(statement, into) do
+      {:ok, results} -> results
+      {:error, reason} -> raise Sqlitex.Statement.FetchAllError, reason: reason
+    end
   end
 
   defp do_prepare(db, sql) do

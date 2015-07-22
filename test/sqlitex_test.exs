@@ -120,6 +120,23 @@ defmodule SqlitexTest do
     assert row[:dt] == {{1985, 10, 26}, {1, 20, 0, 666}}
   end
 
+  test "query! returns data" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (num INTEGER)")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [1])
+    results = Sqlitex.query!(db, "SELECT num from t")
+    assert results == [[num: 1]]
+  end
+
+  test "query! throws on error" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (num INTEGER)")
+    [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [1])
+    assert_raise Sqlitex.QueryError, "Query failed: {:sqlite_error, 'no such column: nope'}", fn ->
+      [res] = Sqlitex.query!(db, "SELECT nope from t")
+    end
+  end
+
   test "server query times out" do
     {:ok, conn} = Sqlitex.Server.start_link(":memory:")
     assert match?({:timeout, _},

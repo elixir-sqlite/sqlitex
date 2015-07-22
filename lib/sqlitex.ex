@@ -20,6 +20,7 @@ defmodule Sqlitex do
   end
 
   def query(db, sql, opts \\ []), do: Sqlitex.Query.query(db, sql, opts)
+  def query!(db, sql, opts \\ []), do: Sqlitex.Query.query!(db, sql, opts)
 
   @doc """
   Create a new table `name` where `table_opts` are a list of table constraints

@@ -19,7 +19,7 @@ defmodule Sqlitex.Query do
   * `into` - The collection to put results into.  This defaults to a list.
 
   ## Returns
-  * {:ok, results} on success
+  * [results...] on success
   * {:error, _} on failure.
   """
   def query(db, sql, opts \\ []) do
@@ -35,8 +35,10 @@ defmodule Sqlitex.Query do
   Returns the results otherwise.
   """
   def query!(db, sql, opts \\ []) do
-    {:ok, results} = query(db, sql, opts)
-    results
+    case query(db, sql, opts) do
+      {:error, reason} -> raise Sqlitex.QueryError, reason: reason
+      results -> results
+    end
   end
 
   defp pipe_ok(x, f) do
