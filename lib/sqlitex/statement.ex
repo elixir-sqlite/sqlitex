@@ -210,15 +210,24 @@ defmodule Sqlitex.Statement do
       nil -> :undefined
       true -> 1
       false -> 0
+      date={_yr, _mo, _da} -> date_to_string(date)
+      time={_hr, _mi, _se, _usecs} -> time_to_string(time)
       datetime={{_yr, _mo, _da}, {_hr, _mi, _se, _usecs}} -> datetime_to_string(datetime)
       %Decimal{sign: sign, coef: coef, exp: exp} -> sign * coef * :math.pow(10, exp)
       other -> other
     end)
   end
 
-  defp datetime_to_string({{yr, mo, da}, {hr, mi, se, usecs}}) do
-    [zero_pad(yr, 4), "-", zero_pad(mo, 2), "-", zero_pad(da, 2), " ", zero_pad(hr, 2), ":", zero_pad(mi, 2), ":", zero_pad(se, 2), ".", zero_pad(usecs, 6)]
-    |> Enum.join
+  defp date_to_string({yr, mo, da}) do
+    Enum.join [zero_pad(yr, 4), "-", zero_pad(mo, 2), "-", zero_pad(da, 2)]
+  end
+
+  def time_to_string({hr, mi, se, usecs}) do
+    Enum.join [zero_pad(hr, 2), ":", zero_pad(mi, 2), ":", zero_pad(se, 2), ".", zero_pad(usecs, 6)]
+  end
+
+  defp datetime_to_string({date={_yr, _mo, _da}, time={_hr, _mi, _se, _usecs}}) do
+    Enum.join [date_to_string(date), " ", time_to_string(time)]
   end
 
   defp zero_pad(num, len) do

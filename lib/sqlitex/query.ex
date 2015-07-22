@@ -22,6 +22,7 @@ defmodule Sqlitex.Query do
   * [results...] on success
   * {:error, _} on failure.
   """
+
   def query(db, sql, opts \\ []) do
     pipe_with &pipe_ok/2,
       Statement.prepare(db, sql)
