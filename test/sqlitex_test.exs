@@ -149,7 +149,7 @@ defmodule SqlitexTest do
     :ok = Sqlitex.exec(db, "CREATE TABLE t (num INTEGER)")
     [] = Sqlitex.query(db, "INSERT INTO t VALUES (?)", bind: [1])
     assert_raise Sqlitex.QueryError, "Query failed: {:sqlite_error, 'no such column: nope'}", fn ->
-      [res] = Sqlitex.query!(db, "SELECT nope from t")
+      [_res] = Sqlitex.query!(db, "SELECT nope from t")
     end
   end
 
