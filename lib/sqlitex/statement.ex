@@ -143,8 +143,8 @@ defmodule Sqlitex.Statement do
   """
   def fetch_all!(statement, into \\ []) do
     case fetch_all(statement, into) do
-      {:ok, results} -> results
       {:error, reason} -> raise Sqlitex.Statement.FetchAllError, reason: reason
+      results -> results
     end
   end
 
