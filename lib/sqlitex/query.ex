@@ -24,10 +24,15 @@ defmodule Sqlitex.Query do
   """
 
   def query(db, sql, opts \\ []) do
-    pipe_with &pipe_ok/2,
+    res = pipe_with &pipe_ok/2,
       Statement.prepare(db, sql)
       |> Statement.bind_values(Dict.get(opts, :bind, []))
       |> Statement.fetch_all(Dict.get(opts, :into, []))
+
+    case res do
+      {:ok, results} -> results
+      other -> other
+    end
   end
 
   @doc """
