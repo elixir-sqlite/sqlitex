@@ -21,7 +21,7 @@ defmodule Sqlitex.Statement do
   :ok
   iex(9)> {:ok, statement} = Sqlitex.Statement.prepare(db, "SELECT * FROM data;")
   iex(10)> Sqlitex.Statement.fetch_all(statement)
-  [[id: 1, name: "hello"]]
+  {:ok, [[id: 1, name: "hello"]]}
   iex(11)> Sqlitex.close(db)
   :ok
 
@@ -128,11 +128,11 @@ defmodule Sqlitex.Statement do
     case :esqlite3.fetchall(statement.statement) do
       {:error, _}=other -> other
       raw_data ->
-        Sqlitex.Row.from(
+        {:ok, Sqlitex.Row.from(
           Tuple.to_list(statement.column_types),
           Tuple.to_list(statement.column_names),
           raw_data, into
-        )
+        )}
     end
   end
 
