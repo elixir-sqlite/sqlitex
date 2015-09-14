@@ -24,6 +24,7 @@ defmodule Sqlitex.Mixfile do
       {:pipe, "~> 0.0.2"},
       {:decimal, "~> 1.1.0"},
 
+      {:dogma, "~> 0.0", only: :dev},
       {:earmark, ">= 0.0.0", only: :dev},
       {:ex_doc, "~> 0.7", only: :dev},
       {:inch_ex, "~> 0.2", only: :dev},
