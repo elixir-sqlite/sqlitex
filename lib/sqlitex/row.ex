@@ -56,8 +56,10 @@ defmodule Sqlitex.Row do
     {String.to_integer(yr), String.to_integer(mo), String.to_integer(da)}
   end
 
-  defp to_time(time) do
-    <<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary-size(6)>> = time
+  defp to_time(<<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary-size(6)>>) do
     {String.to_integer(hr), String.to_integer(mi), String.to_integer(se), String.to_integer(fr)}
+  end
+  defp to_time(<<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2)>>) do
+    {String.to_integer(hr), String.to_integer(mi), String.to_integer(se), 0}
   end
 end
