@@ -136,15 +136,6 @@ defmodule SqlitexTest do
     assert row[:dt] == {{1985, 10, 26}, {1, 20, 0, 666}}
   end
 
-  test "it decodes datetime values with or without microseconds" do
-    {:ok, db} = Sqlitex.open(":memory:")
-    :ok = Sqlitex.exec(db, "CREATE TABLE t (dt DATETIME)")
-    [] = Sqlitex.query(db, "INSERT INTO t VALUES ('1978-05-12 15:16:17'), ('1978-05-12 15:16:17.123456')")
-    [row1,row2] = Sqlitex.query(db, "SELECT dt FROM t")
-    assert row1[:dt] == {{1978, 05, 12}, {15, 16, 17, 0}}
-    assert row2[:dt] == {{1978, 05, 12}, {15, 16, 17, 123456}}
-  end
-
   test "query! returns data" do
     {:ok, db} = Sqlitex.open(":memory:")
     :ok = Sqlitex.exec(db, "CREATE TABLE t (num INTEGER)")
