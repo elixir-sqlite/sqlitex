@@ -1,13 +1,15 @@
 defmodule Sqlitex do
-  @type sqlite_connection :: {:connection, reference, String.t}
+  @type connection :: {:connection, reference, String.t}
+  @type string_or_charlist :: String.t | char_list
+  @type sqlite_error :: {:error, {:sqlite_error, char_list}}
 
-  @spec close(sqlite_connection) :: :ok
+  @spec close(connection) :: :ok
   def close(db) do
     :esqlite3.close(db)
   end
 
-  @spec open(String.t) :: {:ok, sqlite_connection}
-  @spec open(char_list) :: {:ok, sqlite_connection} | {:error, {atom, char_list}}
+  @spec open(String.t) :: {:ok, connection}
+  @spec open(char_list) :: {:ok, connection} | {:error, {atom, char_list}}
   def open(path) when is_binary(path), do: open(String.to_char_list(path))
   def open(path) do
     :esqlite3.open(path)
@@ -20,6 +22,7 @@ defmodule Sqlitex do
     res
   end
 
+  @spec exec(connection, string_or_charlist) :: :ok | sqlite_error
   def exec(db, sql) do
     :esqlite3.exec(sql, db)
   end
