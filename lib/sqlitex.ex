@@ -1,8 +1,13 @@
 defmodule Sqlitex do
+  @type sqlite_connection :: {:connection, reference, String.t}
+
+  @spec close(sqlite_connection) :: :ok
   def close(db) do
     :esqlite3.close(db)
   end
 
+  @spec open(String.t) :: {:ok, sqlite_connection}
+  @spec open(char_list) :: {:ok, sqlite_connection} | {:error, {atom, char_list}}
   def open(path) when is_binary(path), do: open(String.to_char_list(path))
   def open(path) do
     :esqlite3.open(path)
