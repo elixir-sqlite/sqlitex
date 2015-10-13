@@ -23,6 +23,8 @@ defmodule Sqlitex.Query do
   * {:error, _} on failure.
   """
 
+  @spec query(Sqlitex.connection, String.t | char_list) :: [ [] ] | Sqlitex.sqlite_error
+  @spec query(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [ Enum.t ] | Sqlitex.sqlite_error
   def query(db, sql, opts \\ []) do
     res = pipe_with &pipe_ok/2,
       Statement.prepare(db, sql)
@@ -40,6 +42,8 @@ defmodule Sqlitex.Query do
 
   Returns the results otherwise.
   """
+  @spec query!(Sqlitex.connection, String.t | char_list) :: [ [] ]
+  @spec query!(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [ Enum.t ]
   def query!(db, sql, opts \\ []) do
     case query(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
