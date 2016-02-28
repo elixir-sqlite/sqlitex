@@ -1,27 +1,10 @@
 language: elixir
 otp_release:
- - 17.4
- - 17.5
  - 18.0
  - 18.2.1
 elixir:
- - 1.0.5
- - 1.1.0
  - 1.2.0
- - 1.2.2
-matrix:
-  exclude:
-    - elixir: 1.0.5
-      otp_release: 17.4
-    - elixir: 1.2.0
-      otp_release: 17.4
-    - elixir: 1.2.2
-      otp_release: 17.4
-    - elixir: 1.2.0
-      otp_release: 17.5
-    - elixir: 1.2.2
-      otp_release: 17.5
+ - 1.2.3
 after_script:
-  - MIX_ENV=dev mix dogma
   - MIX_ENV=dev mix deps.get
   - MIX_ENV=dev mix inch.report
