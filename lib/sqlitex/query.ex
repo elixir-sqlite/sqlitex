@@ -1,6 +1,4 @@
 defmodule Sqlitex.Query do
-  use Pipe
-
   alias Sqlitex.Statement
 
   @doc """
@@ -26,10 +24,10 @@ defmodule Sqlitex.Query do
   @spec query(Sqlitex.connection, String.t | char_list) :: [ [] ] | Sqlitex.sqlite_error
   @spec query(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [ Enum.t ] | Sqlitex.sqlite_error
   def query(db, sql, opts \\ []) do
-    res = pipe_with &pipe_ok/2,
-      Statement.prepare(db, sql)
-      |> Statement.bind_values(Dict.get(opts, :bind, []))
-      |> Statement.fetch_all(Dict.get(opts, :into, []))
+    res = with {:ok, db} <- Statement.prepare(db, sql),
+               {:ok, db} <- Statement.bind_values(db, Dict.get(opts, :bind, [])),
+               {:ok, res} <- Statement.fetch_all(db, Dict.get(opts, :into, [])),
+          do: res
 
     case res do
       {:ok, results} -> results
@@ -48,13 +46,6 @@ defmodule Sqlitex.Query do
     case query(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
       results -> results
-    end
-  end
-
-  defp pipe_ok(x, f) do
-    case x do
-      {:ok, val} -> f.(val)
-      other -> other
     end
   end
 end

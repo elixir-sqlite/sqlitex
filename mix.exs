@@ -4,7 +4,7 @@ defmodule Sqlitex.Mixfile do
   def project do
     [app: :sqlitex,
      version: "0.8.3",
-     elixir: "~> 1.0",
+     elixir: "~> 1.2",
      deps: deps,
      package: package,
      description: """
@@ -21,14 +21,12 @@ defmodule Sqlitex.Mixfile do
   defp deps do
     [
       {:esqlite, "~> 0.2.0"},
-      {:pipe, "~> 0.0.2"},
       {:decimal, "~> 1.1.0"},
 
-      {:dogma, "~> 0.0", only: :dev},
       {:dialyze, "~> 0.2.0", only: :dev},
-      {:earmark, ">= 0.0.0", only: :dev},
-      {:ex_doc, "~> 0.7", only: :dev},
-      {:inch_ex, "~> 0.2", only: :dev},
+      {:earmark, "~> 0.2.1", only: :dev},
+      {:ex_doc, "~> 0.11", only: :dev},
+      {:inch_ex, "~> 0.5", only: :dev},
     ]
   end
 
