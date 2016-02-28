@@ -14,7 +14,7 @@ defmodule Sqlitex.Mixfile do
 
   # Configuration for the OTP application
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :esqlite]]
   end
 
   # Type `mix help deps` for more examples and options
