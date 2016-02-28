@@ -27,7 +27,7 @@ defmodule Sqlitex.Query do
     with {:ok, db} <- Statement.prepare(db, sql),
          {:ok, db} <- Statement.bind_values(db, Dict.get(opts, :bind, [])),
          {:ok, res} <- Statement.fetch_all(db, Dict.get(opts, :into, [])),
-    do: res
+    do: {:ok, res}
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule Sqlitex.Query do
   def query!(db, sql, opts \\ []) do
     case query(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
-      results -> results
+      {:ok, results} -> results
     end
   end
 end
