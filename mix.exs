@@ -3,7 +3,7 @@ defmodule Sqlitex.Mixfile do
 
   def project do
     [app: :sqlitex,
-     version: "0.8.1",
+     version: "0.8.3",
      elixir: "~> 1.0",
      deps: deps,
      package: package,
@@ -33,7 +33,7 @@ defmodule Sqlitex.Mixfile do
   end
 
   defp package do
-   [contributors: ["Michael Ries", "Jason M Barnes"],
+   [maintainers: ["Michael Ries", "Jason M Barnes", "Graeme Coupar"],
      licenses: ["MIT"],
      links: %{
       github: "https://github.com/mmmries/sqlitex",
