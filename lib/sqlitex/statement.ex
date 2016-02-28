@@ -190,15 +190,13 @@ defmodule Sqlitex.Statement do
   end
 
   defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement}=statement) do
-    case :esqlite3.column_names(sqlite_statement) do
-      names -> {:ok, %Sqlitex.Statement{statement | column_names: names}}
-    end
+    names =  :esqlite3.column_names(sqlite_statement)
+    {:ok, %Sqlitex.Statement{statement | column_names: names}}
   end
 
   defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement}=statement) do
-    case :esqlite3.column_types(sqlite_statement) do
-      types -> {:ok, %Sqlitex.Statement{statement | column_types: types}}
-    end
+    types = :esqlite3.column_types(sqlite_statement)
+    {:ok, %Sqlitex.Statement{statement | column_types: types}}
   end
 
   defp translate_bindings(params) do
