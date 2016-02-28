@@ -24,15 +24,10 @@ defmodule Sqlitex.Query do
   @spec query(Sqlitex.connection, String.t | char_list) :: [ [] ] | Sqlitex.sqlite_error
   @spec query(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [ Enum.t ] | Sqlitex.sqlite_error
   def query(db, sql, opts \\ []) do
-    res = with {:ok, db} <- Statement.prepare(db, sql),
-               {:ok, db} <- Statement.bind_values(db, Dict.get(opts, :bind, [])),
-               {:ok, res} <- Statement.fetch_all(db, Dict.get(opts, :into, [])),
-          do: res
-
-    case res do
-      {:ok, results} -> results
-      other -> other
-    end
+    with {:ok, db} <- Statement.prepare(db, sql),
+         {:ok, db} <- Statement.bind_values(db, Dict.get(opts, :bind, [])),
+         {:ok, res} <- Statement.fetch_all(db, Dict.get(opts, :into, [])),
+    do: res
   end
 
   @doc """
