@@ -28,8 +28,6 @@ defmodule Sqlitex.Statement do
   ```
   """
 
-  use Pipe
-
   defstruct database: nil,
             statement: nil,
             column_names: [],
@@ -49,10 +47,10 @@ defmodule Sqlitex.Statement do
   * See `:esqlite3.prepare` for errors.
   """
   def prepare(db, sql) do
-    pipe_with &pipe_ok/2,
-      do_prepare(db, sql)
-      |> get_column_names
-      |> get_column_types
+    with {:ok, db} <- do_prepare(db, sql),
+         {:ok, db} <- get_column_names(db),
+         {:ok, db} <- get_column_types(db),
+    do: {:ok, db}
   end
 
   @doc """
@@ -192,17 +190,13 @@ defmodule Sqlitex.Statement do
   end
 
   defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement}=statement) do
-    case :esqlite3.column_names(sqlite_statement) do
-      {:error, _}=other -> other
-      names -> {:ok, %Sqlitex.Statement{statement | column_names: names}}
-    end
+    names =  :esqlite3.column_names(sqlite_statement)
+    {:ok, %Sqlitex.Statement{statement | column_names: names}}
   end
 
   defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement}=statement) do
-    case :esqlite3.column_types(sqlite_statement) do
-      {:error, _}=other -> other
-      types -> {:ok, %Sqlitex.Statement{statement | column_types: types}}
-    end
+    types = :esqlite3.column_types(sqlite_statement)
+    {:ok, %Sqlitex.Statement{statement | column_types: types}}
   end
 
   defp translate_bindings(params) do
@@ -233,12 +227,5 @@ defmodule Sqlitex.Statement do
   defp zero_pad(num, len) do
     str = Integer.to_string num
     String.duplicate("0", len - String.length(str)) <> str
-  end
-
-  defp pipe_ok(x, f) do
-    case x do
-      {:ok, val} -> f.(val)
-      other -> other
-    end
   end
 end
