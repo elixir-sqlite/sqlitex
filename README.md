@@ -10,7 +10,7 @@ Updated to 1.0
 ==============
 
 With the 1.0 release we made just a single breaking change. `Sqlitex.Query.query` previously returned just the raw query results on success and `{:error, reason}` on failure.
-This has been bothering us for a while so we changed it in 1.0 to return `{:ok, results}` on sucess and `{:error, reason}` on failure.
+This has been bothering us for a while so we changed it in 1.0 to return `{:ok, results}` on success and `{:error, reason}` on failure.
 This should make it easier to pattern match on. The `Sqlitex.Query.query!` function has kept its same functionality of returning bare results on success and raising an error on failure.
 
 Usage
