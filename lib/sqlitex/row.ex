@@ -23,18 +23,18 @@ defmodule Sqlitex.Row do
   end
 
   # date is empty ""
-  defp translate_value({date, "date"}) when date=="", do: to_date(date)
+  defp translate_value({"", "date"}), do: nil
 
   defp translate_value({date, "date"}) when is_binary(date), do: to_date(date)
 
   # time is empty ""
-  defp translate_value({time, "time"}) when time=="", do: to_time(time)
+  defp translate_value({"", "time"}), do: nil
 
   defp translate_value({time, "time"}) when is_binary(time), do: to_time(time)
 
   # datetime is empty ""
-  defp translate_value({datetime, "datetime"}) when datetime=="" do
-    {"", ""}
+  defp translate_value({"", "datetime"}) do
+    {nil, nil}
   end
 
   # datetime format is "YYYY-MM-DD HH:MM:SS.FFFFFF"
