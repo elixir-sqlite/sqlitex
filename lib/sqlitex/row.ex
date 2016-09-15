@@ -33,9 +33,7 @@ defmodule Sqlitex.Row do
   defp translate_value({time, "time"}) when is_binary(time), do: to_time(time)
 
   # datetime is empty ""
-  defp translate_value({"", "datetime"}) do
-    {nil, nil}
-  end
+  defp translate_value({"", "datetime"}), do: nil
 
   # datetime format is "YYYY-MM-DD HH:MM:SS.FFFFFF"
   defp translate_value({datetime, "datetime"}) when is_binary(datetime) do
