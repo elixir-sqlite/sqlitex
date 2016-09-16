@@ -14,15 +14,15 @@ defmodule Sqlitex.Statement do
   ```
   iex(2)> {:ok, db} = Sqlitex.open(":memory:")
   iex(3)> Sqlitex.query(db, "CREATE TABLE data (id, name);")
-  []
-  iex(6)> {:ok, statement} = Sqlitex.Statement.prepare(db, "INSERT INTO data VALUES (?, ?);")
-  iex(7)> Sqlitex.Statement.bind_values(statement, [1, "hello"])
-  iex(8)> Sqlitex.Statement.exec(statement)
+  {:ok, []}
+  iex(4)> {:ok, statement} = Sqlitex.Statement.prepare(db, "INSERT INTO data VALUES (?, ?);")
+  iex(5)> Sqlitex.Statement.bind_values(statement, [1, "hello"])
+  iex(6)> Sqlitex.Statement.exec(statement)
   :ok
-  iex(9)> {:ok, statement} = Sqlitex.Statement.prepare(db, "SELECT * FROM data;")
-  iex(10)> Sqlitex.Statement.fetch_all(statement)
+  iex(7)> {:ok, statement} = Sqlitex.Statement.prepare(db, "SELECT * FROM data;")
+  iex(8)> Sqlitex.Statement.fetch_all(statement)
   {:ok, [[id: 1, name: "hello"]]}
-  iex(11)> Sqlitex.close(db)
+  iex(9)> Sqlitex.close(db)
   :ok
 
   ```
