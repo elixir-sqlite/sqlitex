@@ -5,3 +5,4 @@ erl_crash.dump
 /bench/snapshots
 /doc
 /docs
+mix.lock
