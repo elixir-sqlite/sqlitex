@@ -184,4 +184,14 @@ defmodule SqlitexTest do
     |> Enum.zip([Decimal.new(1.12), Decimal.new(244), Decimal.new(1990)])
     |> Enum.each(fn {res, ans} -> assert Decimal.equal?(res, ans) end)
   end
+
+  test "it handles datetime, date, time with empty string" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (a datetime NOT NULL, b date NOT NULL, c time NOT NULL)")
+    {:ok, []} = Sqlitex.query(db, "INSERT INTO t VALUES (?, ?, ?)", bind: ["", "", ""])
+    {:ok, [row]} = Sqlitex.query(db, "SELECT a, b, c FROM t")
+    assert row[:a] == nil
+    assert row[:b] == nil
+    assert row[:c] == nil
+  end
 end
