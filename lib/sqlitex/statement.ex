@@ -90,7 +90,7 @@ defmodule Sqlitex.Statement do
   """
   def bind_values(statement, values) do
     case :esqlite3.bind(statement.statement, translate_bindings(values)) do
-      {:error, _}=error -> error
+      {:error, _} = error -> error
       :ok -> {:ok, statement}
     end
   end
@@ -124,7 +124,7 @@ defmodule Sqlitex.Statement do
   """
   def fetch_all(statement, into \\ []) do
     case :esqlite3.fetchall(statement.statement) do
-      {:error, _}=other -> other
+      {:error, _} = other -> other
       raw_data ->
         {:ok, Sqlitex.Row.from(
           Tuple.to_list(statement.column_types),
@@ -189,12 +189,12 @@ defmodule Sqlitex.Statement do
     end
   end
 
-  defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement}=statement) do
+  defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
     names =  :esqlite3.column_names(sqlite_statement)
     {:ok, %Sqlitex.Statement{statement | column_names: names}}
   end
 
-  defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement}=statement) do
+  defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
     types = :esqlite3.column_types(sqlite_statement)
     {:ok, %Sqlitex.Statement{statement | column_types: types}}
   end
@@ -204,9 +204,9 @@ defmodule Sqlitex.Statement do
       nil -> :undefined
       true -> 1
       false -> 0
-      date={_yr, _mo, _da} -> date_to_string(date)
-      time={_hr, _mi, _se, _usecs} -> time_to_string(time)
-      datetime={{_yr, _mo, _da}, {_hr, _mi, _se, _usecs}} -> datetime_to_string(datetime)
+      date = {_yr, _mo, _da} -> date_to_string(date)
+      time = {_hr, _mi, _se, _usecs} -> time_to_string(time)
+      datetime = {{_yr, _mo, _da}, {_hr, _mi, _se, _usecs}} -> datetime_to_string(datetime)
       %Decimal{sign: sign, coef: coef, exp: exp} -> sign * coef * :math.pow(10, exp)
       other -> other
     end)
@@ -220,7 +220,7 @@ defmodule Sqlitex.Statement do
     Enum.join [zero_pad(hr, 2), ":", zero_pad(mi, 2), ":", zero_pad(se, 2), ".", zero_pad(usecs, 6)]
   end
 
-  defp datetime_to_string({date={_yr, _mo, _da}, time={_hr, _mi, _se, _usecs}}) do
+  defp datetime_to_string({date = {_yr, _mo, _da}, time = {_hr, _mi, _se, _usecs}}) do
     Enum.join [date_to_string(date), " ", time_to_string(time)]
   end
 
