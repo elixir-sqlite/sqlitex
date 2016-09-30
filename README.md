@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/mmmries/sqlitex.svg?branch=master)](https://travis-ci.org/mmmries/sqlitex)
 [![Inline docs](http://inch-ci.org/github/mmmries/sqlitex.svg?branch=master)](http://inch-ci.org/github/mmmries/sqlitex)
+[![Ebert](https://ebertapp.io/badges/jqfj5LtkUP2CsjaYoJSbp3pg.svg)](https://ebertapp.io/repos/119)
 
 Sqlitex
 =======
