@@ -2,7 +2,6 @@
 /deps
 erl_crash.dump
 *.ez
-/bench/snapshots
 /doc
 /docs
 mix.lock
