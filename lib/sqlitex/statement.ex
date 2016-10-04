@@ -1,4 +1,5 @@
 defmodule Sqlitex.Statement do
+  alias Sqlitex.Row
   @moduledoc """
   Provides an interface for working with sqlite prepared statements.
 
@@ -126,7 +127,7 @@ defmodule Sqlitex.Statement do
     case :esqlite3.fetchall(statement.statement) do
       {:error, _} = other -> other
       raw_data ->
-        {:ok, Sqlitex.Row.from(
+        {:ok, Row.from(
           Tuple.to_list(statement.column_types),
           Tuple.to_list(statement.column_names),
           raw_data, into
