@@ -17,7 +17,7 @@ defmodule Sqlitex.Server do
   {:ok, [%{a: 1, b: 1}]}
   iex> Sqlitex.Server.stop(:example)
   :ok
-  iex> Process.sleep(10) # wait for the process to exit asynchronously
+  iex> :timer.sleep(10) # wait for the process to exit asynchronously
   iex> Process.alive?(pid)
   false
 
