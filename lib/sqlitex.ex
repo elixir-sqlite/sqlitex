@@ -3,6 +3,25 @@ defmodule Sqlitex do
   @type string_or_charlist :: String.t | char_list
   @type sqlite_error :: {:error, {:sqlite_error, char_list}}
 
+  @moduledoc """
+  Sqlitex gives you a way to create and query sqlite databases.
+
+  ## Basic Example
+
+  ```
+  iex> {:ok, db} = Sqlitex.open(":memory:")
+  iex> Sqlitex.exec(db, "CREATE TABLE t (a INTEGER, b INTEGER, c INTEGER)")
+  :ok
+  iex> Sqlitex.exec(db, "INSERT INTO t VALUES (1, 2, 3)")
+  :ok
+  iex> Sqlitex.query(db, "SELECT * FROM t")
+  {:ok, [[a: 1, b: 2, c: 3]]}
+  iex> Sqlitex.query(db, "SELECT * FROM t", into: %{})
+  {:ok, [%{a: 1, b: 2, c: 3}]}
+
+  ```
+  """
+
   @spec close(connection) :: :ok
   def close(db) do
     :esqlite3.close(db)

@@ -1,5 +1,6 @@
 defmodule SqlitexTest do
   use ExUnit.Case
+  doctest Sqlitex
 
   @shared_cache 'file::memory:?cache=shared'
 

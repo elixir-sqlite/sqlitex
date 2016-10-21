@@ -1,4 +1,40 @@
 defmodule Sqlitex.Server do
+  @moduledoc """
+  Sqlitex.Server provides a GenServer to wrap a sqlitedb.
+  This makes it easy to share a sqlite database between multiple processes without worrying about concurrency issues.
+  You can also register the process with a name so you can query by name later.
+
+  ## Unsupervised Example
+  ```
+  iex> {:ok, pid} = Sqlitex.Server.start_link(":memory:", [name: :example])
+  iex> Sqlitex.Server.exec(pid, "CREATE TABLE t (a INTEGER, b INTEGER)")
+  :ok
+  iex> Sqlitex.Server.exec(pid, "INSERT INTO t (a, b) VALUES (1, 1), (2, 2), (3, 3)")
+  :ok
+  iex> Sqlitex.Server.query(pid, "SELECT * FROM t WHERE b = 2")
+  {:ok, [[a: 2, b: 2]]}
+  iex> Sqlitex.Server.query(:example, "SELECT * FROM t ORDER BY a LIMIT 1", into: %{})
+  {:ok, [%{a: 1, b: 1}]}
+  iex> Sqlitex.Server.stop(:example)
+  :ok
+  iex> :timer.sleep(10) # wait for the process to exit asynchronously
+  iex> Process.alive?(pid)
+  false
+
+  ```
+
+  ## Supervised Example
+  ```
+  import Supervisor.Spec
+
+  children = [
+    worker(Sqlitex.Server, ["priv/my_db.sqlite3", [name: :my_db])
+  ]
+
+  Supervisor.start_link(children, strategy: :one_for_one)
+  ```
+  """
+
   use GenServer
 
   def start_link(db_path, opts \\ []) do
