@@ -2,7 +2,6 @@ defmodule Sqlitex.OrderTest do
   use ExUnit.Case
   use ExCheck
 
-  @tag number_iterations: 200
   property :ordering_query_results do
     for_all {x, y} in {int, int} do
       {:ok, db} = Sqlitex.open(":memory:")
