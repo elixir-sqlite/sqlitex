@@ -1,3 +1,4 @@
+ExCheck.start
 ExUnit.start()
 
 # Include TestDatabase:
