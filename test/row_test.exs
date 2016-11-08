@@ -14,11 +14,11 @@ defmodule Sqlitex.RowTest do
 
   test "supports the YYYY-MM-DD HH:MM:SS.FFF format" do
     [row] = from([:datetime],[:test],[{"1988-02-14 15:17:11.123"}], %{})
-    assert %{test: {{1988,2,14},{15,17,11,123000}}} == row
+    assert %{test: {{1988,2,14},{15,17,11,123_000}}} == row
   end
 
   test "supports the YYYY-MM-DD HH:MM:SS.FFFFFF format" do
     [row] = from([:datetime],[:test],[{"1988-02-14 15:17:11.123456"}], %{})
-    assert %{test: {{1988,2,14},{15,17,11,123456}}} == row
+    assert %{test: {{1988,2,14},{15,17,11,123_456}}} == row
   end
 end
