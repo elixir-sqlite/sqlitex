@@ -8,6 +8,3 @@ elixir:
 after_script:
   - MIX_ENV=dev mix deps.get
   - MIX_ENV=dev mix inch.report
-branches:
-  only:
-    - master
