@@ -21,4 +21,10 @@ defmodule Sqlitex.RowTest do
     [row] = from([:datetime],[:test],[{"1988-02-14 15:17:11.123456"}], %{})
     assert %{test: {{1988,2,14},{15,17,11,123_456}}} == row
   end
+
+  test "parses decimal types" do
+    [row] = from([:"DECIMAL(2,1)"], [:cost], [{1}], [])
+    value = Decimal.new(1, 10, -1)
+    assert [{:cost, value}] == row
+  end
 end
