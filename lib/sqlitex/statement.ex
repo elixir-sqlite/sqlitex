@@ -121,6 +121,7 @@ defmodule Sqlitex.Statement do
   ## Returns
 
   * `{:ok, results}`
+  * `{:ok, results, column_names}` if `into: :raw_list`
   * `{:error, error}`
   """
   def fetch_all(statement, into \\ []) do
@@ -131,9 +132,14 @@ defmodule Sqlitex.Statement do
           Tuple.to_list(statement.column_types),
           Tuple.to_list(statement.column_names),
           raw_data, into
-        )}
+        )} |> maybe_add_column_names(statement.column_names, into)
     end
   end
+
+  defp maybe_add_column_names({:ok, rows}, column_names, :raw_list) do
+    {:ok, rows, column_names}
+  end
+  defp maybe_add_column_names(result, _, _), do: result
 
   @doc """
   Same as `fetch_all/2` but raises a Sqlitex.Statement.FetchAllError on error.
