@@ -15,6 +15,7 @@ defmodule Sqlitex.Query do
   * `bind` - If your query has parameters in it, you should provide the options
     to bind as a list.
   * `into` - The collection to put results into.  This defaults to a list.
+  * `types` - True to include column types (as a list) as fourth argument.
 
   ## Returns
   * [results...] on success
@@ -26,7 +27,8 @@ defmodule Sqlitex.Query do
   def query(db, sql, opts \\ []) do
     with {:ok, db} <- Statement.prepare(db, sql),
          {:ok, db} <- Statement.bind_values(db, Dict.get(opts, :bind, [])),
-         {:ok, res} <- Statement.fetch_all(db, Dict.get(opts, :into, [])),
+         {:ok, res} <- Statement.fetch_all(db, Dict.get(opts, :into, []),
+                                               Dict.get(opts, :types, false)),
     do: {:ok, res}
   end
 

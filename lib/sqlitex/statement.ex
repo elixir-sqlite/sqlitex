@@ -124,23 +124,24 @@ defmodule Sqlitex.Statement do
   * `{:ok, results, column_names}` if `into: :raw_list`
   * `{:error, error}`
   """
-  def fetch_all(statement, into \\ []) do
+  def fetch_all(statement, into \\ [], include_types? \\ false) do
     column_names = statement.column_names
+    column_types = statement.column_types
     case :esqlite3.fetchall(statement.statement) do
       {:error, _} = other -> other
       raw_data ->
-        {:ok, Row.from(
-          Tuple.to_list(statement.column_types),
-          column_names,
-          raw_data, into
-        )} |> maybe_add_column_names(column_names, into)
+        {:ok, Row.from(column_types, column_names, raw_data, into)} |>
+          maybe_add_column_info(column_names, into, column_types, include_types?)
     end
   end
 
-  defp maybe_add_column_names({:ok, rows}, column_names, :raw_list) do
+  defp maybe_add_column_info({:ok, rows}, column_names, :raw_list, column_types, true) do
+    {:ok, rows, column_names, column_types}
+  end
+  defp maybe_add_column_info({:ok, rows}, column_names, :raw_list, column_types, false) do
     {:ok, rows, column_names}
   end
-  defp maybe_add_column_names(result, _, _), do: result
+  defp maybe_add_column_info(result, _, _, _, _), do: result
 
   @doc """
   Same as `fetch_all/2` but raises a Sqlitex.Statement.FetchAllError on error.
@@ -206,9 +207,10 @@ defmodule Sqlitex.Statement do
   end
 
   defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
-    types = :esqlite3.column_types(sqlite_statement)
-      # FIXME: Maybe do Tuple.to_list treatment for column_types as we did
-      # for column_names above?
+    types =
+      sqlite_statement
+      |> :esqlite3.column_types
+      |> Tuple.to_list
     {:ok, %Sqlitex.Statement{statement | column_types: types}}
   end
 
