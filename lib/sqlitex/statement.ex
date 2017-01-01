@@ -125,14 +125,15 @@ defmodule Sqlitex.Statement do
   * `{:error, error}`
   """
   def fetch_all(statement, into \\ []) do
+    column_names = statement.column_names
     case :esqlite3.fetchall(statement.statement) do
       {:error, _} = other -> other
       raw_data ->
         {:ok, Row.from(
           Tuple.to_list(statement.column_types),
-          Tuple.to_list(statement.column_names),
+          column_names,
           raw_data, into
-        )} |> maybe_add_column_names(statement.column_names, into)
+        )} |> maybe_add_column_names(column_names, into)
     end
   end
 
@@ -197,12 +198,17 @@ defmodule Sqlitex.Statement do
   end
 
   defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
-    names =  :esqlite3.column_names(sqlite_statement)
+    names =
+      sqlite_statement
+      |> :esqlite3.column_names
+      |> Tuple.to_list
     {:ok, %Sqlitex.Statement{statement | column_names: names}}
   end
 
   defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
     types = :esqlite3.column_types(sqlite_statement)
+      # FIXME: Maybe do Tuple.to_list treatment for column_types as we did
+      # for column_names above?
     {:ok, %Sqlitex.Statement{statement | column_types: types}}
   end
 

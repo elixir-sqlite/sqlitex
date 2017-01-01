@@ -16,7 +16,7 @@ defmodule Sqlitex.Server do
   iex> Sqlitex.Server.query(:example, "SELECT * FROM t ORDER BY a LIMIT 1", into: %{})
   {:ok, [%{a: 1, b: 1}]}
   iex> Sqlitex.Server.query(:example, "SELECT * FROM t ORDER BY a LIMIT 2", into: :raw_list)
-  {:ok, [[1, 1], [2, 2]], {:a, :b}}
+  {:ok, [[1, 1], [2, 2]], [:a, :b]}
   iex> Sqlitex.Server.stop(:example)
   :ok
   iex> :timer.sleep(10) # wait for the process to exit asynchronously
