@@ -5,6 +5,9 @@ defmodule Sqlitex.Row do
     end
   end
 
+  defp build_row(_types, _columns, row, :raw_list) do
+    row |> Tuple.to_list
+  end
   defp build_row(types, columns, row, into) do
     types = Enum.map(types, fn type ->
       type |> Atom.to_string |> String.downcase
