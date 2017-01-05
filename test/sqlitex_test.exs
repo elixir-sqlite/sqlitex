@@ -154,6 +154,33 @@ defmodule SqlitexTest do
     end
   end
 
+  test "query_rows returns {:ok, data}", context do
+    {:ok, result} = context[:golf_db] |> Sqlitex.query_rows("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
+    %{rows: rows, columns: columns, types: types} = result
+    assert rows == [[25, "Slothstronauts"]]
+    assert columns == [:id, :name]
+    assert types == [:INTEGER, :"varchar(255)"]
+  end
+
+  test "query_rows return {:error, reason}", context do
+    {:error, reason} = context[:golf_db] |> Sqlitex.query_rows("SELECT wat FROM players")
+    assert reason == {:sqlite_error, 'no such column: wat'}
+  end
+
+  test "query_rows! returns data", context do
+    result = context[:golf_db] |> Sqlitex.query_rows!("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
+    %{rows: rows, columns: columns, types: types} = result
+    assert rows == [[25, "Slothstronauts"]]
+    assert columns == [:id, :name]
+    assert types == [:INTEGER, :"varchar(255)"]
+  end
+
+  test "query_rows! raises on error", context do
+    assert_raise Sqlitex.QueryError, "Query failed: {:sqlite_error, 'no such column: wat'}", fn ->
+      [_res] = context[:golf_db] |> Sqlitex.query_rows!("SELECT wat FROM players")
+    end
+  end
+
   test "server query times out" do
     {:ok, conn} = Sqlitex.Server.start_link(":memory:")
     assert match?({:timeout, _},
