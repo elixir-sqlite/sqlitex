@@ -121,27 +121,15 @@ defmodule Sqlitex.Statement do
   ## Returns
 
   * `{:ok, results}`
-  * `{:ok, results, column_names}` if `into: :raw_list`
   * `{:error, error}`
   """
-  def fetch_all(statement, into \\ [], include_types? \\ false) do
-    column_names = statement.column_names
-    column_types = statement.column_types
+  def fetch_all(statement, into \\ []) do
     case :esqlite3.fetchall(statement.statement) do
       {:error, _} = other -> other
       raw_data ->
-        {:ok, Row.from(column_types, column_names, raw_data, into)} |>
-          maybe_add_column_info(column_names, into, column_types, include_types?)
+        {:ok, Row.from(statement.column_types, statement.column_names, raw_data, into)}
     end
   end
-
-  defp maybe_add_column_info({:ok, rows}, column_names, :raw_list, column_types, true) do
-    {:ok, rows, column_names, column_types}
-  end
-  defp maybe_add_column_info({:ok, rows}, column_names, :raw_list, column_types, false) do
-    {:ok, rows, column_names}
-  end
-  defp maybe_add_column_info(result, _, _, _, _), do: result
 
   @doc """
   Same as `fetch_all/2` but raises a Sqlitex.Statement.FetchAllError on error.

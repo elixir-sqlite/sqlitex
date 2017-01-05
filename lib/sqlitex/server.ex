@@ -15,10 +15,8 @@ defmodule Sqlitex.Server do
   {:ok, [[a: 2, b: 2]]}
   iex> Sqlitex.Server.query(:example, "SELECT * FROM t ORDER BY a LIMIT 1", into: %{})
   {:ok, [%{a: 1, b: 1}]}
-  iex> Sqlitex.Server.query(:example, "SELECT * FROM t ORDER BY a LIMIT 2", into: :raw_list)
-  {:ok, [[1, 1], [2, 2]], [:a, :b]}
-  iex> Sqlitex.Server.query(:example, "SELECT * FROM t ORDER BY a LIMIT 2", into: :raw_list, types: true)
-  {:ok, [[1, 1], [2, 2]], [:a, :b], [:INTEGER, :INTEGER]}
+  iex> Sqlitex.Server.query_rows(:example, "SELECT * FROM t ORDER BY a LIMIT 2")
+  {:ok, %{rows: [[1, 1], [2, 2]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
   iex> Sqlitex.Server.stop(:example)
   :ok
   iex> :timer.sleep(10) # wait for the process to exit asynchronously
@@ -64,6 +62,11 @@ defmodule Sqlitex.Server do
     {:reply, rows, db}
   end
 
+  def handle_call({:query_rows, sql, opts}, _from, db) do
+    rows = Sqlitex.query_rows(db, sql, opts)
+    {:reply, rows, db}
+  end
+
   def handle_call({:create_table, name, table_opts, cols}, _from, db) do
     result = Sqlitex.create_table(db, name, table_opts, cols)
     {:reply, result, db}
@@ -86,6 +89,10 @@ defmodule Sqlitex.Server do
 
   def query(pid, sql, opts \\ []) do
     GenServer.call(pid, {:query, sql, opts}, timeout(opts))
+  end
+
+  def query_rows(pid, sql, opts \\ []) do
+    GenServer.call(pid, {:query_rows, sql, opts}, timeout(opts))
   end
 
   def create_table(pid, name, table_opts \\ [], cols) do
