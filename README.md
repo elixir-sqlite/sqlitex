@@ -55,6 +55,6 @@ Sqlitex.Server.query(Sqlitex.Server,
 Plans
 =====
 
-I am building this package as an attempt to learn more about Elixir and I'll be adding features only as I need them.
-
-I would love to get any feedback I can on how other people might want to use SQlite with Elixir.
+I started this project mostly as a way to learn about Elixir.
+Some other people have found it useful and have done the hard work to make it work with ecto [v1.X](https://github.com/jazzyb/sqlite_ecto) and [v2.X](https://github.com/scouten/sqlite_ecto2).
+I'm not currently using this for any production-level projects, but I'm happy to continue maintaining it as long as people find it useful.
