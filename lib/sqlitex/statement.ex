@@ -48,10 +48,10 @@ defmodule Sqlitex.Statement do
   * See `:esqlite3.prepare` for errors.
   """
   def prepare(db, sql) do
-    with {:ok, db} <- do_prepare(db, sql),
-         {:ok, db} <- get_column_names(db),
-         {:ok, db} <- get_column_types(db),
-    do: {:ok, db}
+    with {:ok, stmt} <- do_prepare(db, sql),
+         {:ok, stmt} <- get_column_names(stmt),
+         {:ok, stmt} <- get_column_types(stmt),
+    do: {:ok, stmt}
   end
 
   @doc """
