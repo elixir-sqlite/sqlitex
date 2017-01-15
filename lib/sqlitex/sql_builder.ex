@@ -12,8 +12,8 @@ defmodule Sqlitex.SqlBuilder do
   # column_name: :column_type, of
   # column_name: {:column_type, [column_constraints]}
   def create_table(name, table_opts, cols) do
-    tbl_options = get_opts_dict(table_opts, &table_opt/1)
-    get_opt = &(Dict.get(tbl_options, &1, nil))
+    tbl_options = get_opts_map(table_opts, &table_opt/1)
+    get_opt = &(Map.get(tbl_options, &1, nil))
 
     "CREATE #{get_opt.(:temp)} TABLE \"#{name}\" (#{get_columns_block(cols)} #{get_opt.(:primary_key)})"
   end
@@ -38,9 +38,9 @@ defmodule Sqlitex.SqlBuilder do
   defp column_opt(:not_null), do: {:not_null, "NOT NULL"}
   defp column_opt(:autoincrement), do: {:autoincrement, "AUTOINCREMENT"}
 
-  # Helper function that creates a dictionary of option names
+  # Helper function that creates a map of option names
   # and their string representations
-  defp get_opts_dict(opts, opt) do
+  defp get_opts_map(opts, opt) do
     Enum.into(opts, %{}, &(opt.(&1)))
   end
 
@@ -51,8 +51,8 @@ defmodule Sqlitex.SqlBuilder do
       case col do
         # Column with name, type and constraint
         {name, {type, constraints}} ->
-          col_options = get_opts_dict(constraints, &column_opt/1)
-          get_opt = &(Dict.get(col_options, &1, nil))
+          col_options = get_opts_map(constraints, &column_opt/1)
+          get_opt = &(Map.get(col_options, &1, nil))
 
           [~s("#{name}"), type, get_opt.(:primary_key), get_opt.(:not_null), get_opt.(:autoincrement)]
             |> Enum.filter(&(&1))

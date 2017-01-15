@@ -3,7 +3,7 @@ defmodule Sqlitex.OrderTest do
   use ExCheck
 
   property :ordering_query_results do
-    for_all {x, y} in {int, int} do
+    for_all {x, y} in {int(), int()} do
       {:ok, db} = Sqlitex.open(":memory:")
       :ok = Sqlitex.exec(db, "CREATE TABLE t (a INTEGER)")
       :ok = Sqlitex.exec(db, "INSERT INTO t (a) VALUES #{(x..y) |> Enum.map(&( "(#{&1})" )) |> Enum.join(",")}")

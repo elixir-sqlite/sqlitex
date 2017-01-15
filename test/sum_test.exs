@@ -3,7 +3,7 @@ defmodule Sqlitex.SumTest do
   use ExCheck
 
   property :sum_integers do
-    for_all nums in such_that(ns in list(int) when length(ns) > 0) do
+    for_all nums in such_that(ns in list(int()) when length(ns) > 0) do
       {:ok, db} = Sqlitex.open(":memory:")
       :ok = Sqlitex.exec(db, "CREATE TABLE t (a INTEGER)")
       Enum.each(nums, fn(num) ->

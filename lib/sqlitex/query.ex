@@ -25,8 +25,8 @@ defmodule Sqlitex.Query do
   @spec query(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [Enum.t] | Sqlitex.sqlite_error
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Dict.get(opts, :bind, [])),
-         {:ok, res} <- Statement.fetch_all(stmt, Dict.get(opts, :into, [])),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
     do: {:ok, res}
   end
 
@@ -68,7 +68,7 @@ defmodule Sqlitex.Query do
   @spec query_rows(Sqlitex.connection, String.t | char_list, [bind: []]) :: {:ok, %{}} | Sqlitex.sqlite_error
   def query_rows(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Dict.get(opts, :bind, [])),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
          {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
     do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
   end
