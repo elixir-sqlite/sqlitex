@@ -5,8 +5,8 @@ defmodule Sqlitex.Mixfile do
     [app: :sqlitex,
      version: "1.1.0",
      elixir: "~> 1.2",
-     deps: deps,
-     package: package,
+     deps: deps(),
+     package: package(),
      description: """
       A thin Elixir wrapper around esqlite
     """]
