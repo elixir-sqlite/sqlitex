@@ -10,4 +10,10 @@ defmodule StatementTest do
 
     assert result == [[user_version: 0]]
   end
+
+  test "prepare retains original SQL" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    {:ok, stmt} = Sqlitex.Statement.prepare(db, "SELECT 123;")
+    assert stmt.sql == "SELECT 123;"
+  end
 end
