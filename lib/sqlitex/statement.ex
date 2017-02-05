@@ -31,6 +31,7 @@ defmodule Sqlitex.Statement do
 
   defstruct database: nil,
             statement: nil,
+            sql: nil,
             column_names: [],
             column_types: []
 
@@ -181,7 +182,7 @@ defmodule Sqlitex.Statement do
   defp do_prepare(db, sql) do
     case :esqlite3.prepare(sql, db) do
       {:ok, statement} ->
-        {:ok, %Sqlitex.Statement{database: db, statement: statement}}
+        {:ok, %Sqlitex.Statement{database: db, statement: statement, sql: sql}}
       other -> other
     end
   end
