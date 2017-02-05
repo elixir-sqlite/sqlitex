@@ -32,6 +32,19 @@ end)
 # => [%{id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil}]
 ```
 
+Pass the `bind` option to bind parameterized queries.
+
+```elixir
+Sqlitex.with_db('test/fixtures/golfscores.sqlite3', fn(db) ->
+  Sqlitex.query(
+    db, 
+    "INSERT INTO players (name, created_at, updated_at) VALUES ($1, $2, $3, $4)", 
+    bind: ['Mikey', '2012-10-14 05:46:28.318107', '2013-09-06 22:29:36.610911'])
+end)
+# => [[id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]]
+
+```
+
 If you want to keep the database open during the lifetime of your project you can use the `Sqlitex.Server` GenServer module.
 Here's a sample from a phoenix projects main supervisor definition.
 ```elixir
