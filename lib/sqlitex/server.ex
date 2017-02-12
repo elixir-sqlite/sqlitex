@@ -66,36 +66,22 @@ defmodule Sqlitex.Server do
   end
 
   def handle_call({:query, sql, opts}, _from, {db, stmt_cache}) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
-         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, []))
-    do
-      {:reply, {:ok, rows}, {db, new_cache}}
-    else
+    case query_impl(sql, opts, stmt_cache) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
       err -> {:reply, err, {db, stmt_cache}}
     end
   end
 
   def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache}) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
-         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list)
-    do
-      {:reply,
-       {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}},
-       {db, new_cache}}
-    else
+    case query_rows_impl(sql, opts, stmt_cache) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
       err -> {:reply, err, {db, stmt_cache}}
     end
   end
 
   def handle_call({:prepare, sql}, _from, {db, stmt_cache}) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql)
-    do
-      {:reply,
-       {:ok, %{columns: stmt.column_names, types: stmt.column_types}},
-       {db, new_cache}}
-    else
+    case prepare_impl(sql, stmt_cache) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
       err -> {:reply, err, {db, stmt_cache}}
     end
   end
@@ -141,6 +127,27 @@ defmodule Sqlitex.Server do
   end
 
   ## Helpers
+
+  defp query_impl(sql, opts, stmt_cache) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
+    do: {:ok, rows, new_cache}
+  end
+
+  defp query_rows_impl(sql, opts, stmt_cache) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
+    do: {:ok,
+         %{rows: rows, columns: stmt.column_names, types: stmt.column_types},
+         new_cache}
+  end
+
+  defp prepare_impl(sql, stmt_cache) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+    do: {:ok, %{columns: stmt.column_names, types: stmt.column_types}, new_cache}
+  end
 
   defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
 end
