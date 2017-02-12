@@ -32,12 +32,12 @@ defmodule SqlitexTest do
   end
 
   test "a basic query returns a list of keyword lists", context do
-    {:ok, [row]} = context[:golf_db] |> Sqlitex.query("SELECT * FROM players ORDER BY id LIMIT 1")
+    {:ok, [row]} = Sqlitex.query(context[:golf_db], "SELECT * FROM players ORDER BY id LIMIT 1")
     assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil]
   end
 
   test "a basic query returns a list of maps when into: %{} is given", context do
-    {:ok, [row]} = context[:golf_db] |> Sqlitex.query("SELECT * FROM players ORDER BY id LIMIT 1", into: %{})
+    {:ok, [row]} = Sqlitex.query(context[:golf_db], "SELECT * FROM players ORDER BY id LIMIT 1", into: %{})
     assert row == %{id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil}
   end
 
@@ -62,12 +62,12 @@ defmodule SqlitexTest do
   end
 
   test "a parameterized query", context do
-    {:ok, [row]} = context[:golf_db] |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
+    {:ok, [row]} = Sqlitex.query(context[:golf_db], "SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
     assert row == [id: 25, name: "Slothstronauts"]
   end
 
   test "a parameterized query into %{}", context do
-    {:ok, [row]} = context[:golf_db] |> Sqlitex.query("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"], into: %{})
+    {:ok, [row]} = Sqlitex.query(context[:golf_db], "SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"], into: %{})
     assert row == %{id: 25, name: "Slothstronauts"}
   end
 
@@ -155,7 +155,7 @@ defmodule SqlitexTest do
   end
 
   test "query_rows returns {:ok, data}", context do
-    {:ok, result} = context[:golf_db] |> Sqlitex.query_rows("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
+    {:ok, result} = Sqlitex.query_rows(context[:golf_db], "SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
     %{rows: rows, columns: columns, types: types} = result
     assert rows == [[25, "Slothstronauts"]]
     assert columns == [:id, :name]
@@ -163,12 +163,12 @@ defmodule SqlitexTest do
   end
 
   test "query_rows return {:error, reason}", context do
-    {:error, reason} = context[:golf_db] |> Sqlitex.query_rows("SELECT wat FROM players")
+    {:error, reason} = Sqlitex.query_rows(context[:golf_db], "SELECT wat FROM players")
     assert reason == {:sqlite_error, 'no such column: wat'}
   end
 
   test "query_rows! returns data", context do
-    result = context[:golf_db] |> Sqlitex.query_rows!("SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
+    result = Sqlitex.query_rows!(context[:golf_db], "SELECT id, name FROM players WHERE name LIKE ?1 AND type == ?2", bind: ["s%", "Team"])
     %{rows: rows, columns: columns, types: types} = result
     assert rows == [[25, "Slothstronauts"]]
     assert columns == [:id, :name]
@@ -177,7 +177,7 @@ defmodule SqlitexTest do
 
   test "query_rows! raises on error", context do
     assert_raise Sqlitex.QueryError, "Query failed: {:sqlite_error, 'no such column: wat'}", fn ->
-      [_res] = context[:golf_db] |> Sqlitex.query_rows!("SELECT wat FROM players")
+      [_res] = Sqlitex.query_rows!(context[:golf_db], "SELECT wat FROM players")
     end
   end
 
