@@ -10,7 +10,6 @@ defmodule Sqlitex.Server.StatementCacheTest do
     cache = S.new(db, 3)
     assert %S{cached_stmts: %{}, db: _, limit: 3, lru: [], size: 0} = cache
 
-
     {cache, stmt1a} = S.prepare(cache, "SELECT 42")
     assert %Stmt{column_names: [:"42"], column_types: [nil], statement: ""} = stmt1a
 
