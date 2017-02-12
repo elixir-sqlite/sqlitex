@@ -17,6 +17,8 @@ defmodule Sqlitex.Server do
   {:ok, [%{a: 1, b: 1}]}
   iex> Sqlitex.Server.query_rows(:example, "SELECT * FROM t ORDER BY a LIMIT 2")
   {:ok, %{rows: [[1, 1], [2, 2]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
+  iex> Sqlitex.Server.prepare(:example, "SELECT * FROM t")
+  {:ok, %{columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
   iex> Sqlitex.Server.stop(:example)
   :ok
   iex> :timer.sleep(10) # wait for the process to exit asynchronously
@@ -39,44 +41,75 @@ defmodule Sqlitex.Server do
 
   use GenServer
 
+  alias Sqlitex.Statement
+  alias Sqlitex.Server.StatementCache, as: Cache
+
   def start_link(db_path, opts \\ []) do
-    GenServer.start_link(__MODULE__, db_path, opts)
+    stmt_cache_size = Keyword.get(opts, :stmt_cache_size, 20)
+    GenServer.start_link(__MODULE__, {db_path, stmt_cache_size}, opts)
   end
 
   ## GenServer callbacks
 
-  def init(db_path) do
+  def init({db_path, stmt_cache_size})
+    when is_integer(stmt_cache_size) and stmt_cache_size > 0
+  do
     case Sqlitex.open(db_path) do
-      {:ok, db} -> {:ok, db}
+      {:ok, db} -> {:ok, {db, __MODULE__.StatementCache.new(db, stmt_cache_size)}}
       {:error, reason} -> {:stop, reason}
     end
   end
 
-  def handle_call({:exec, sql}, _from, db) do
+  def handle_call({:exec, sql}, _from, {db, stmt_cache}) do
     result = Sqlitex.exec(db, sql)
-    {:reply, result, db}
+    {:reply, result, {db, stmt_cache}}
   end
 
-  def handle_call({:query, sql, opts}, _from, db) do
-    rows = Sqlitex.query(db, sql, opts)
-    {:reply, rows, db}
+  def handle_call({:query, sql, opts}, _from, {db, stmt_cache}) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, []))
+    do
+      {:reply, {:ok, rows}, {db, new_cache}}
+    else
+      err -> {:reply, err, {db, stmt_cache}}
+    end
   end
 
-  def handle_call({:query_rows, sql, opts}, _from, db) do
-    rows = Sqlitex.query_rows(db, sql, opts)
-    {:reply, rows, db}
+  def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache}) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list)
+    do
+      {:reply,
+       {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}},
+       {db, new_cache}}
+    else
+      err -> {:reply, err, {db, stmt_cache}}
+    end
   end
 
-  def handle_call({:create_table, name, table_opts, cols}, _from, db) do
+  def handle_call({:prepare, sql}, _from, {db, stmt_cache}) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql)
+    do
+      {:reply,
+       {:ok, %{columns: stmt.column_names, types: stmt.column_types}},
+       {db, new_cache}}
+    else
+      err -> {:reply, err, {db, stmt_cache}}
+    end
+  end
+
+  def handle_call({:create_table, name, table_opts, cols}, _from, {db, stmt_cache}) do
     result = Sqlitex.create_table(db, name, table_opts, cols)
-    {:reply, result, db}
+    {:reply, result, {db, stmt_cache}}
   end
 
-  def handle_cast(:stop, db) do
-    {:stop, :normal, db}
+  def handle_cast(:stop, {db, stmt_cache}) do
+    {:stop, :normal, {db, stmt_cache}}
   end
 
-  def terminate(_reason, db) do
+  def terminate(_reason, {db, _stmt_cache}) do
     Sqlitex.close(db)
     :ok
   end
@@ -93,6 +126,10 @@ defmodule Sqlitex.Server do
 
   def query_rows(pid, sql, opts \\ []) do
     GenServer.call(pid, {:query_rows, sql, opts}, timeout(opts))
+  end
+
+  def prepare(pid, sql, opts \\ []) do
+    GenServer.call(pid, {:prepare, sql}, timeout(opts))
   end
 
   def create_table(pid, name, table_opts \\ [], cols) do
