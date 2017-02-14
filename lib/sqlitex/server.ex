@@ -19,6 +19,10 @@ defmodule Sqlitex.Server do
   {:ok, %{rows: [[1, 1], [2, 2]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
   iex> Sqlitex.Server.prepare(:example, "SELECT * FROM t")
   {:ok, %{columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
+    # Subsequent queries using this exact statement will now operate more efficiently
+    # because this statement has been cached.
+  iex> Sqlitex.Server.prepare(:example, "INVALID SQL")
+  {:error, {:sqlite_error, 'near "INVALID": syntax error'}}
   iex> Sqlitex.Server.stop(:example)
   :ok
   iex> :timer.sleep(10) # wait for the process to exit asynchronously
@@ -44,6 +48,13 @@ defmodule Sqlitex.Server do
   alias Sqlitex.Statement
   alias Sqlitex.Server.StatementCache, as: Cache
 
+  @doc """
+  Starts a SQLite Server (GenServer) instance.
+
+  In addition to the options that are typically provided to `GenServer.start_link/3`,
+  you can also specify `stmt_cache_size: (positive_integer)` to override the default
+  limit (20) of statements that are cached when calling `prepare/3`.
+  """
   def start_link(db_path, opts \\ []) do
     stmt_cache_size = Keyword.get(opts, :stmt_cache_size, 20)
     GenServer.start_link(__MODULE__, {db_path, stmt_cache_size}, opts)
@@ -114,6 +125,24 @@ defmodule Sqlitex.Server do
     GenServer.call(pid, {:query_rows, sql, opts}, timeout(opts))
   end
 
+  @doc """
+  Prepares a SQL statement for future use.
+
+  This causes a call to [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html)
+  to be executed in the Server process. To protect the reference to the corresponding
+  [`sqlite3_stmt` struct](https://sqlite.org/c3ref/stmt.html) from misuse in other
+  processes, that reference is not passed back. Instead, prepared statements are
+  cached in the Server process. If a subsequent call to `query/3` or `query_rows/3`
+  is made with a matching SQL statement, the prepared statement is reused.
+
+  Prepared statements are purged from the cache when the cache exceeds a pre-set
+  limit (20 statements by default).
+
+  Returns summary information about the prepared statement
+  `{:ok, %{columns: [:column1_name, :column2_name,... ], types: [:column1_type, ...]}}`
+  on success or `{:error, {:reason_code, 'SQLite message'}}` if the statement
+  could not be prepared.
+  """
   def prepare(pid, sql, opts \\ []) do
     GenServer.call(pid, {:prepare, sql}, timeout(opts))
   end
