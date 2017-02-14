@@ -7,6 +7,12 @@ defmodule Sqlitex.Mixfile do
      elixir: "~> 1.2",
      deps: deps(),
      package: package(),
+     test_coverage: [tool: ExCoveralls],
+     preferred_cli_env: [
+        "coveralls": :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test],
      description: """
       A thin Elixir wrapper around esqlite
     """]
@@ -26,6 +32,7 @@ defmodule Sqlitex.Mixfile do
       {:credo, "~> 0.4", only: :dev},
       {:dialyze, "~> 0.2.0", only: :dev},
       {:earmark, "~> 0.2.1", only: :dev},
+      {:excoveralls, "~> 0.6", only: :test},
       {:ex_doc, "~> 0.11", only: :dev},
       {:inch_ex, "~> 0.5", only: :dev},
 

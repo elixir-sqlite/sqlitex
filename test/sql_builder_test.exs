@@ -16,7 +16,7 @@ defmodule SqlBuilderTest do
     sql = Sql.create_table(:dinosaurs, [primary_key: :id], id: :integer, name: :text)
     assert sql == "CREATE  TABLE \"dinosaurs\" (\"id\" integer, \"name\" text ,PRIMARY KEY (\"id\"))"
   end
- 
+
   test "creating a table with multiple primary keys" do
     sql = Sql.create_table(:dinosaurs, [primary_key: [:id, :type]], id: :integer, type: :integer, name: :text)
     assert sql == "CREATE  TABLE \"dinosaurs\" (\"id\" integer, \"type\" integer, \"name\" text ,PRIMARY KEY (\"id\",\"type\"))"
