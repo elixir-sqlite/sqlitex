@@ -7,6 +7,12 @@ defmodule Sqlitex.Mixfile do
      elixir: "~> 1.2",
      deps: deps(),
      package: package(),
+     test_coverage: [tool: ExCoveralls],
+     preferred_cli_env: [
+        "coveralls": :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test],
      description: """
       A thin Elixir wrapper around esqlite
     """]
@@ -28,6 +34,7 @@ defmodule Sqlitex.Mixfile do
       {:earmark, "1.0.3", only: :dev},
         # v1.1 introduces a deprecation warning that causes a lot of console
         # noise when used with current as-of-this-writing version of exdoc (0.14.5)
+      {:excoveralls, "~> 0.6", only: :test},
       {:ex_doc, "~> 0.14.5", only: :dev},
       {:inch_ex, "~> 0.5", only: :dev},
 
