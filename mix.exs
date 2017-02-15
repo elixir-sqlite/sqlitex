@@ -31,9 +31,11 @@ defmodule Sqlitex.Mixfile do
 
       {:credo, "~> 0.4", only: :dev},
       {:dialyze, "~> 0.2.0", only: :dev},
-      {:earmark, "~> 0.2.1", only: :dev},
+      {:earmark, "1.0.3", only: :dev},
+        # v1.1 introduces a deprecation warning that causes a lot of console
+        # noise when used with current as-of-this-writing version of exdoc (0.14.5)
       {:excoveralls, "~> 0.6", only: :test},
-      {:ex_doc, "~> 0.11", only: :dev},
+      {:ex_doc, "~> 0.14.5", only: :dev},
       {:inch_ex, "~> 0.5", only: :dev},
 
       {:excheck, "~> 0.5", only: :test},
