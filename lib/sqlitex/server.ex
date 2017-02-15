@@ -17,6 +17,12 @@ defmodule Sqlitex.Server do
   {:ok, [%{a: 1, b: 1}]}
   iex> Sqlitex.Server.query_rows(:example, "SELECT * FROM t ORDER BY a LIMIT 2")
   {:ok, %{rows: [[1, 1], [2, 2]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
+  iex> Sqlitex.Server.prepare(:example, "SELECT * FROM t")
+  {:ok, %{columns: [:a, :b], types: [:INTEGER, :INTEGER]}}
+    # Subsequent queries using this exact statement will now operate more efficiently
+    # because this statement has been cached.
+  iex> Sqlitex.Server.prepare(:example, "INVALID SQL")
+  {:error, {:sqlite_error, 'near "INVALID": syntax error'}}
   iex> Sqlitex.Server.stop(:example)
   :ok
   iex> :timer.sleep(10) # wait for the process to exit asynchronously
@@ -39,44 +45,68 @@ defmodule Sqlitex.Server do
 
   use GenServer
 
+  alias Sqlitex.Statement
+  alias Sqlitex.Server.StatementCache, as: Cache
+
+  @doc """
+  Starts a SQLite Server (GenServer) instance.
+
+  In addition to the options that are typically provided to `GenServer.start_link/3`,
+  you can also specify `stmt_cache_size: (positive_integer)` to override the default
+  limit (20) of statements that are cached when calling `prepare/3`.
+  """
   def start_link(db_path, opts \\ []) do
-    GenServer.start_link(__MODULE__, db_path, opts)
+    stmt_cache_size = Keyword.get(opts, :stmt_cache_size, 20)
+    GenServer.start_link(__MODULE__, {db_path, stmt_cache_size}, opts)
   end
 
   ## GenServer callbacks
 
-  def init(db_path) do
+  def init({db_path, stmt_cache_size})
+    when is_integer(stmt_cache_size) and stmt_cache_size > 0
+  do
     case Sqlitex.open(db_path) do
-      {:ok, db} -> {:ok, db}
+      {:ok, db} -> {:ok, {db, __MODULE__.StatementCache.new(db, stmt_cache_size)}}
       {:error, reason} -> {:stop, reason}
     end
   end
 
-  def handle_call({:exec, sql}, _from, db) do
+  def handle_call({:exec, sql}, _from, {db, stmt_cache}) do
     result = Sqlitex.exec(db, sql)
-    {:reply, result, db}
+    {:reply, result, {db, stmt_cache}}
   end
 
-  def handle_call({:query, sql, opts}, _from, db) do
-    rows = Sqlitex.query(db, sql, opts)
-    {:reply, rows, db}
+  def handle_call({:query, sql, opts}, _from, {db, stmt_cache}) do
+    case query_impl(sql, opts, stmt_cache) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
+      err -> {:reply, err, {db, stmt_cache}}
+    end
   end
 
-  def handle_call({:query_rows, sql, opts}, _from, db) do
-    rows = Sqlitex.query_rows(db, sql, opts)
-    {:reply, rows, db}
+  def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache}) do
+    case query_rows_impl(sql, opts, stmt_cache) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
+      err -> {:reply, err, {db, stmt_cache}}
+    end
   end
 
-  def handle_call({:create_table, name, table_opts, cols}, _from, db) do
+  def handle_call({:prepare, sql}, _from, {db, stmt_cache}) do
+    case prepare_impl(sql, stmt_cache) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
+      err -> {:reply, err, {db, stmt_cache}}
+    end
+  end
+
+  def handle_call({:create_table, name, table_opts, cols}, _from, {db, stmt_cache}) do
     result = Sqlitex.create_table(db, name, table_opts, cols)
-    {:reply, result, db}
+    {:reply, result, {db, stmt_cache}}
   end
 
-  def handle_cast(:stop, db) do
-    {:stop, :normal, db}
+  def handle_cast(:stop, {db, stmt_cache}) do
+    {:stop, :normal, {db, stmt_cache}}
   end
 
-  def terminate(_reason, db) do
+  def terminate(_reason, {db, _stmt_cache}) do
     Sqlitex.close(db)
     :ok
   end
@@ -95,6 +125,28 @@ defmodule Sqlitex.Server do
     GenServer.call(pid, {:query_rows, sql, opts}, timeout(opts))
   end
 
+  @doc """
+  Prepares a SQL statement for future use.
+
+  This causes a call to [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html)
+  to be executed in the Server process. To protect the reference to the corresponding
+  [`sqlite3_stmt` struct](https://sqlite.org/c3ref/stmt.html) from misuse in other
+  processes, that reference is not passed back. Instead, prepared statements are
+  cached in the Server process. If a subsequent call to `query/3` or `query_rows/3`
+  is made with a matching SQL statement, the prepared statement is reused.
+
+  Prepared statements are purged from the cache when the cache exceeds a pre-set
+  limit (20 statements by default).
+
+  Returns summary information about the prepared statement
+  `{:ok, %{columns: [:column1_name, :column2_name,... ], types: [:column1_type, ...]}}`
+  on success or `{:error, {:reason_code, 'SQLite message'}}` if the statement
+  could not be prepared.
+  """
+  def prepare(pid, sql, opts \\ []) do
+    GenServer.call(pid, {:prepare, sql}, timeout(opts))
+  end
+
   def create_table(pid, name, table_opts \\ [], cols) do
     GenServer.call(pid, {:create_table, name, table_opts, cols})
   end
@@ -104,6 +156,27 @@ defmodule Sqlitex.Server do
   end
 
   ## Helpers
+
+  defp query_impl(sql, opts, stmt_cache) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
+    do: {:ok, rows, new_cache}
+  end
+
+  defp query_rows_impl(sql, opts, stmt_cache) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
+    do: {:ok,
+         %{rows: rows, columns: stmt.column_names, types: stmt.column_types},
+         new_cache}
+  end
+
+  defp prepare_impl(sql, stmt_cache) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+    do: {:ok, %{columns: stmt.column_names, types: stmt.column_types}, new_cache}
+  end
 
   defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
 end
