@@ -27,10 +27,49 @@ defmodule Sqlitex.Statement do
   :ok
 
   ```
+
+  ## RETURNING Clause Support
+
+  SQLite does not support the RETURNING extension to INSERT, DELETE, and UPDATE
+  commands. (See https://www.postgresql.org/docs/9.6/static/sql-insert.html for
+  a description of the Postgres implementation of this clause.)
+
+  Ecto 2.0 relies on being able to capture this information, so have invented our
+  own implementation with the following syntax:
+
+  ```
+  ;--RETURNING ON [INSERT | UPDATE | DELETE] <table>,<col>,<col>,...
+  ```
+
+  When the `prepare/2` and `prepare!/2` functions are given a query that contains
+  the above returning clause, they separate this clause from the end of the query
+  and store it separately in the `Statement` struct. Only the portion of the query
+  preceding the returning clause is passed to SQLite's prepare function.
+
+  Later, when such a statement struct is passed to `fetch_all/2` or `fetch_all!/2`
+  the returning clause is parsed and the query is performed with the following
+  additional logic:
+
+  ```
+  SAVEPOINT sp_<random>;
+  CREATE TEMP TABLE temp.t_<random> (<returning>);
+  CREATE TEMP TRIGGER tr_<random> AFTER UPDATE ON main.<table> BEGIN
+      INSERT INTO t_<random> SELECT NEW.<returning>;
+  END;
+  UPDATE ...; -- whatever the original statement was
+  DROP TRIGGER tr_<random>;
+  SELECT <returning> FROM temp.t_<random>;
+  DROP TABLE temp.t_<random>;
+  RELEASE sp_<random>;
+  ```
+
+  A more detailed description of the motivations for making this change is here:
+  https://github.com/jazzyb/sqlite_ecto/wiki/Sqlite.Ecto's-Pseudo-Returning-Clause
   """
 
   defstruct database: nil,
             statement: nil,
+            returning: nil,
             column_names: [],
             column_types: []
 
@@ -51,6 +90,7 @@ defmodule Sqlitex.Statement do
     with {:ok, stmt} <- do_prepare(db, sql),
          {:ok, stmt} <- get_column_names(stmt),
          {:ok, stmt} <- get_column_types(stmt),
+         {:ok, stmt} <- extract_returning_clause(stmt, sql),
     do: {:ok, stmt}
   end
 
@@ -124,11 +164,18 @@ defmodule Sqlitex.Statement do
   * `{:error, error}`
   """
   def fetch_all(statement, into \\ []) do
-    case :esqlite3.fetchall(statement.statement) do
+    case raw_fetch_all(statement) do
       {:error, _} = other -> other
       raw_data ->
         {:ok, Row.from(statement.column_types, statement.column_names, raw_data, into)}
     end
+  end
+
+  defp raw_fetch_all(%__MODULE__{returning: nil, statement: statement}) do
+    :esqlite3.fetchall(statement)
+  end
+  defp raw_fetch_all(statement) do
+    returning_query(statement)
   end
 
   @doc """
@@ -231,4 +278,114 @@ defmodule Sqlitex.Statement do
     str = Integer.to_string num
     String.duplicate("0", len - String.length(str)) <> str
   end
+
+  # --- Returning clause support
+
+  @pseudo_returning_statement ~r(\s*;--RETURNING\s+ON\s+)i
+
+  defp extract_returning_clause(statement, sql) do
+    if Regex.match?(@pseudo_returning_statement, sql) do
+      [_, returning_clause] = Regex.split(@pseudo_returning_statement, sql, parts: 2)
+      case parse_return_contents(returning_clause) do
+        {_table, cols, _command, _ref} = info ->
+          {:ok, %{statement | returning: info,
+                              column_names: Enum.map(cols, &String.to_atom/1),
+                              column_types: Enum.map(cols, fn _ -> nil end)}}
+        err ->
+          err
+      end
+    else
+      {:ok, statement}
+    end
+  end
+
+  defp parse_return_contents(<<"INSERT ", values::binary>>) do
+    [table | cols] = String.split(values, ",")
+    {table, cols, "INSERT", "NEW"}
+  end
+  defp parse_return_contents(<<"UPDATE ", values::binary>>) do
+    [table | cols] = String.split(values, ",")
+    {table, cols, "UPDATE", "NEW"}
+  end
+  defp parse_return_contents(<<"DELETE ", values::binary>>) do
+    [table | cols] = String.split(values, ",")
+    {table, cols, "DELETE", "OLD"}
+  end
+  defp parse_return_contents(_) do
+    {:error, :invalid_returning_clause}
+  end
+
+  defp returning_query(%__MODULE__{database: db,
+                                   statement: statement,
+                                   returning: {table, cols, command, ref}})
+  do
+    with_savepoint(db, fn ->
+      with_temp_table(db, cols, fn tmp_tbl ->
+        err = with_temp_trigger(db, table, tmp_tbl, cols, command, ref, fn ->
+          :esqlite3.fetchall(statement)
+        end)
+
+        case err do
+          {:error, _} -> err
+          _ ->
+            fields = Enum.join(cols, ", ")
+            :esqlite3.q("SELECT #{fields} FROM #{tmp_tbl}", db)
+        end
+      end)
+    end)
+  end
+
+  defp with_savepoint(db, func) do
+    sp = "sp_#{random_id()}"
+    [] = :esqlite3.q("SAVEPOINT #{sp}", db)
+    case safe_call(db, func, sp) do
+      {:error, _} = error ->
+        [] = :esqlite3.q("ROLLBACK TO SAVEPOINT #{sp}", db)
+        [] = :esqlite3.q("RELEASE #{sp}", db)
+        error
+      result ->
+        [] = :esqlite3.q("RELEASE #{sp}", db)
+        result
+    end
+  end
+
+  defp safe_call(db, func, sp) do
+    try do
+      func.()
+    rescue
+      e in RuntimeError ->
+        [] = :esqlite3.q("ROLLBACK TO SAVEPOINT #{sp}", db)
+        [] = :esqlite3.q("RELEASE #{sp}", db)
+        raise e
+    end
+  end
+
+  defp with_temp_table(db, returning, func) do
+    tmp = "t_#{random_id()}"
+    fields = Enum.join(returning, ", ")
+    results = case :esqlite3.q("CREATE TEMP TABLE #{tmp} (#{fields})", db) do
+      {:error, _} = err -> err
+      _ -> func.(tmp)
+    end
+    :esqlite3.q("DROP TABLE IF EXISTS #{tmp}", db)
+    results
+  end
+
+  defp with_temp_trigger(db, table, tmp_tbl, returning, command, ref, func) do
+    tmp = "tr_" <> random_id()
+    fields = Enum.map_join(returning, ", ", &"#{ref}.#{&1}")
+    sql = """
+    CREATE TEMP TRIGGER #{tmp} AFTER #{command} ON main.#{table} BEGIN
+        INSERT INTO #{tmp_tbl} SELECT #{fields};
+    END;
+    """
+    results = case :esqlite3.q(sql, db) do
+      {:error, _} = err -> err
+      _ -> func.()
+    end
+    :esqlite3.q("DROP TRIGGER IF EXISTS #{tmp}", db)
+    results
+  end
+
+  defp random_id, do: :rand.uniform |> Float.to_string |> String.slice(2..10)
 end
