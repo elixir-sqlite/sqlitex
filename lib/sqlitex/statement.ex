@@ -34,7 +34,7 @@ defmodule Sqlitex.Statement do
   commands. (See https://www.postgresql.org/docs/9.6/static/sql-insert.html for
   a description of the Postgres implementation of this clause.)
 
-  Ecto 2.0 relies on being able to capture this information, so have invented our
+  Ecto 2.0+ relies on being able to capture this information, so have invented our
   own implementation with the following syntax:
 
   ```
