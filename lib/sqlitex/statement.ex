@@ -27,10 +27,49 @@ defmodule Sqlitex.Statement do
   :ok
 
   ```
+
+  ## RETURNING Clause Support
+
+  SQLite does not support the RETURNING extension to INSERT, DELETE, and UPDATE
+  commands. (See https://www.postgresql.org/docs/9.6/static/sql-insert.html for
+  a description of the Postgres implementation of this clause.)
+
+  Ecto 2.0+ relies on being able to capture this information, so have invented our
+  own implementation with the following syntax:
+
+  ```
+  ;--RETURNING ON [INSERT | UPDATE | DELETE] <table>,<col>,<col>,...
+  ```
+
+  When the `prepare/2` and `prepare!/2` functions are given a query that contains
+  the above returning clause, they separate this clause from the end of the query
+  and store it separately in the `Statement` struct. Only the portion of the query
+  preceding the returning clause is passed to SQLite's prepare function.
+
+  Later, when such a statement struct is passed to `fetch_all/2` or `fetch_all!/2`
+  the returning clause is parsed and the query is performed with the following
+  additional logic:
+
+  ```
+  SAVEPOINT sp_<random>;
+  CREATE TEMP TABLE temp.t_<random> (<returning>);
+  CREATE TEMP TRIGGER tr_<random> AFTER UPDATE ON main.<table> BEGIN
+      INSERT INTO t_<random> SELECT NEW.<returning>;
+  END;
+  UPDATE ...; -- whatever the original statement was
+  DROP TRIGGER tr_<random>;
+  SELECT <returning> FROM temp.t_<random>;
+  DROP TABLE temp.t_<random>;
+  RELEASE sp_<random>;
+  ```
+
+  A more detailed description of the motivations for making this change is here:
+  https://github.com/jazzyb/sqlite_ecto/wiki/Sqlite.Ecto's-Pseudo-Returning-Clause
   """
 
   defstruct database: nil,
             statement: nil,
+            returning: nil,
             column_names: [],
             column_types: []
 
@@ -51,6 +90,7 @@ defmodule Sqlitex.Statement do
     with {:ok, stmt} <- do_prepare(db, sql),
          {:ok, stmt} <- get_column_names(stmt),
          {:ok, stmt} <- get_column_types(stmt),
+         {:ok, stmt} <- extract_returning_clause(stmt, sql),
     do: {:ok, stmt}
   end
 
@@ -124,11 +164,18 @@ defmodule Sqlitex.Statement do
   * `{:error, error}`
   """
   def fetch_all(statement, into \\ []) do
-    case :esqlite3.fetchall(statement.statement) do
+    case raw_fetch_all(statement) do
       {:error, _} = other -> other
       raw_data ->
         {:ok, Row.from(statement.column_types, statement.column_names, raw_data, into)}
     end
+  end
+
+  defp raw_fetch_all(%__MODULE__{returning: nil, statement: statement}) do
+    :esqlite3.fetchall(statement)
+  end
+  defp raw_fetch_all(statement) do
+    returning_query(statement)
   end
 
   @doc """
@@ -231,4 +278,102 @@ defmodule Sqlitex.Statement do
     str = Integer.to_string num
     String.duplicate("0", len - String.length(str)) <> str
   end
+
+  # --- Returning clause support
+
+  @pseudo_returning_statement ~r(\s*;--RETURNING\s+ON\s+)i
+
+  defp extract_returning_clause(statement, sql) do
+    if Regex.match?(@pseudo_returning_statement, sql) do
+      [_, returning_clause] = Regex.split(@pseudo_returning_statement, sql, parts: 2)
+      case parse_return_contents(returning_clause) do
+        {_table, cols, _command, _ref} = info ->
+          {:ok, %{statement | returning: info,
+                              column_names: Enum.map(cols, &String.to_atom/1),
+                              column_types: Enum.map(cols, fn _ -> nil end)}}
+        err ->
+          err
+      end
+    else
+      {:ok, statement}
+    end
+  end
+
+  defp parse_return_contents(<<"INSERT ", values::binary>>) do
+    [table | cols] = String.split(values, ",")
+    {table, cols, "INSERT", "NEW"}
+  end
+  defp parse_return_contents(<<"UPDATE ", values::binary>>) do
+    [table | cols] = String.split(values, ",")
+    {table, cols, "UPDATE", "NEW"}
+  end
+  defp parse_return_contents(<<"DELETE ", values::binary>>) do
+    [table | cols] = String.split(values, ",")
+    {table, cols, "DELETE", "OLD"}
+  end
+  defp parse_return_contents(_) do
+    {:error, :invalid_returning_clause}
+  end
+
+  defp returning_query(%__MODULE__{database: db} = stmt) do
+    sp = "sp_#{random_id()}"
+    {:ok, _} = db_exec(db, "SAVEPOINT #{sp}")
+
+    case returning_query_in_savepoint(sp, stmt) do
+      {:error, _} = error ->
+        rollback(db, sp)
+        error
+      result ->
+        {:ok, _} = db_exec(db, "RELEASE #{sp}")
+        result
+    end
+  end
+
+  defp returning_query_in_savepoint(sp, %__MODULE__{database: db,
+                                                    statement: statement,
+                                                    returning: {table, cols, cmd, ref}})
+  do
+    temp_table = "t_#{random_id()}"
+    temp_fields = Enum.join(cols, ", ")
+
+    trigger_name = "tr_#{random_id()}"
+    trigger_fields = Enum.map_join(cols, ", ", &"#{ref}.#{&1}")
+    trigger = """
+    CREATE TEMP TRIGGER #{trigger_name} AFTER #{cmd} ON main.#{table} BEGIN
+      INSERT INTO #{temp_table} SELECT #{trigger_fields};
+    END;
+    """
+
+    column_names = Enum.join(cols, ", ")
+
+    with {:ok, _} = db_exec(db, "CREATE TEMP TABLE #{temp_table} (#{temp_fields})"),
+         {:ok, _} = db_exec(db, trigger),
+         _ = :esqlite3.fetchall(statement),
+         {:ok, rows} = db_exec(db, "SELECT #{column_names} FROM #{temp_table}"),
+         {:ok, _} = db_exec(db, "DROP TRIGGER IF EXISTS #{trigger_name}"),
+         {:ok, _} = db_exec(db, "DROP TABLE IF EXISTS #{temp_table}")
+    do
+      rows
+    end
+  catch
+    e ->
+      rollback(db, sp)
+      raise e
+  end
+
+  defp rollback(db, sp) do
+    {:ok, _} = db_exec(db, "ROLLBACK TO SAVEPOINT #{sp}")
+    {:ok, _} = db_exec(db, "RELEASE #{sp}")
+  end
+
+  defp db_exec(db, sql) do
+    case :esqlite3.q(sql, db) do
+      {:error, _} = error ->
+        error
+      result ->
+        {:ok, result}
+    end
+  end
+
+  defp random_id, do: :rand.uniform |> Float.to_string |> String.slice(2..10)
 end
