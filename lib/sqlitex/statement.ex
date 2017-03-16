@@ -350,14 +350,12 @@ defmodule Sqlitex.Statement do
   end
 
   defp safe_call(db, func, sp) do
-    try do
-      func.()
-    rescue
-      e in RuntimeError ->
-        [] = :esqlite3.q("ROLLBACK TO SAVEPOINT #{sp}", db)
-        [] = :esqlite3.q("RELEASE #{sp}", db)
-        raise e
-    end
+    func.()
+  catch
+    e in RuntimeError ->
+      [] = :esqlite3.q("ROLLBACK TO SAVEPOINT #{sp}", db)
+      [] = :esqlite3.q("RELEASE #{sp}", db)
+      raise e
   end
 
   defp with_temp_table(db, returning, func) do
