@@ -315,74 +315,64 @@ defmodule Sqlitex.Statement do
     {:error, :invalid_returning_clause}
   end
 
-  defp returning_query(%__MODULE__{database: db,
-                                   statement: statement,
-                                   returning: {table, cols, command, ref}})
-  do
-    with_savepoint(db, fn ->
-      with_temp_table(db, cols, fn tmp_tbl ->
-        err = with_temp_trigger(db, table, tmp_tbl, cols, command, ref, fn ->
-          :esqlite3.fetchall(statement)
-        end)
-
-        case err do
-          {:error, _} -> err
-          _ ->
-            fields = Enum.join(cols, ", ")
-            :esqlite3.q("SELECT #{fields} FROM #{tmp_tbl}", db)
-        end
-      end)
-    end)
-  end
-
-  defp with_savepoint(db, func) do
+  defp returning_query(%__MODULE__{database: db} = stmt) do
     sp = "sp_#{random_id()}"
-    [] = :esqlite3.q("SAVEPOINT #{sp}", db)
-    case safe_call(db, func, sp) do
+    {:ok, _} = db_exec(db, "SAVEPOINT #{sp}")
+
+    case returning_query_in_savepoint(sp, stmt) do
       {:error, _} = error ->
-        [] = :esqlite3.q("ROLLBACK TO SAVEPOINT #{sp}", db)
-        [] = :esqlite3.q("RELEASE #{sp}", db)
+        rollback(db, sp)
         error
       result ->
-        [] = :esqlite3.q("RELEASE #{sp}", db)
+        {:ok, _} = db_exec(db, "RELEASE #{sp}")
         result
     end
   end
 
-  defp safe_call(db, func, sp) do
-    func.()
+  defp returning_query_in_savepoint(sp, %__MODULE__{database: db,
+                                                    statement: statement,
+                                                    returning: {table, cols, cmd, ref}})
+  do
+    temp_table = "t_#{random_id()}"
+    temp_fields = Enum.join(cols, ", ")
+
+    trigger_name = "tr_#{random_id()}"
+    trigger_fields = Enum.map_join(cols, ", ", &"#{ref}.#{&1}")
+    trigger = """
+    CREATE TEMP TRIGGER #{trigger_name} AFTER #{cmd} ON main.#{table} BEGIN
+      INSERT INTO #{temp_table} SELECT #{trigger_fields};
+    END;
+    """
+
+    column_names = Enum.join(cols, ", ")
+
+    with {:ok, _} = db_exec(db, "CREATE TEMP TABLE #{temp_table} (#{temp_fields})"),
+         {:ok, _} = db_exec(db, trigger),
+         _ = :esqlite3.fetchall(statement),
+         {:ok, rows} = db_exec(db, "SELECT #{column_names} FROM #{temp_table}"),
+         {:ok, _} = db_exec(db, "DROP TRIGGER IF EXISTS #{trigger_name}"),
+         {:ok, _} = db_exec(db, "DROP TABLE IF EXISTS #{temp_table}")
+    do
+      rows
+    end
   catch
-    e in RuntimeError ->
-      [] = :esqlite3.q("ROLLBACK TO SAVEPOINT #{sp}", db)
-      [] = :esqlite3.q("RELEASE #{sp}", db)
+    e ->
+      rollback(db, sp)
       raise e
   end
 
-  defp with_temp_table(db, returning, func) do
-    tmp = "t_#{random_id()}"
-    fields = Enum.join(returning, ", ")
-    results = case :esqlite3.q("CREATE TEMP TABLE #{tmp} (#{fields})", db) do
-      {:error, _} = err -> err
-      _ -> func.(tmp)
-    end
-    :esqlite3.q("DROP TABLE IF EXISTS #{tmp}", db)
-    results
+  defp rollback(db, sp) do
+    {:ok, _} = db_exec(db, "ROLLBACK TO SAVEPOINT #{sp}")
+    {:ok, _} = db_exec(db, "RELEASE #{sp}")
   end
 
-  defp with_temp_trigger(db, table, tmp_tbl, returning, command, ref, func) do
-    tmp = "tr_" <> random_id()
-    fields = Enum.map_join(returning, ", ", &"#{ref}.#{&1}")
-    sql = """
-    CREATE TEMP TRIGGER #{tmp} AFTER #{command} ON main.#{table} BEGIN
-        INSERT INTO #{tmp_tbl} SELECT #{fields};
-    END;
-    """
-    results = case :esqlite3.q(sql, db) do
-      {:error, _} = err -> err
-      _ -> func.()
+  defp db_exec(db, sql) do
+    case :esqlite3.q(sql, db) do
+      {:error, _} = error ->
+        error
+      result ->
+        {:ok, result}
     end
-    :esqlite3.q("DROP TRIGGER IF EXISTS #{tmp}", db)
-    results
   end
 
   defp random_id, do: :rand.uniform |> Float.to_string |> String.slice(2..10)
