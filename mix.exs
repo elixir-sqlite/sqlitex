@@ -26,7 +26,7 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, "~> 0.2.0"},
+      {:esqlite, "~> 0.2.3"},
       {:decimal, "~> 1.1"},
 
       {:credo, "~> 0.4", only: :dev},
