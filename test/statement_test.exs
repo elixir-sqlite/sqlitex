@@ -59,4 +59,19 @@ defmodule StatementTest do
     rows = Sqlitex.Statement.fetch_all!(stmt, :raw_list)
     assert rows == [[1], [2], [3]]
   end
+
+  test "RETURNING pseudo-syntax doesn't mask error when query fails" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    Sqlitex.exec(db, "CREATE TABLE x(id INTEGER PRIMARY KEY AUTOINCREMENT, str)")
+    Sqlitex.exec(db, "CREATE UNIQUE INDEX x_str ON x(str)")
+
+    Sqlitex.exec(db, "INSERT INTO x(str) VALUES ('x'),('y'),('z')")
+
+    stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES ('x') "
+                                          <> ";--RETURNING ON INSERT x,id")
+
+    result = Sqlitex.Statement.fetch_all(stmt, :raw_list)
+    assert result == {:error, {:constraint, 'UNIQUE constraint failed: x.str'}}
+  end
 end

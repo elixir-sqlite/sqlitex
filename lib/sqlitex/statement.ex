@@ -348,12 +348,12 @@ defmodule Sqlitex.Statement do
 
     with {:ok, _} = db_exec(db, "CREATE TEMP TABLE #{temp_table} (#{temp_fields})"),
          {:ok, _} = db_exec(db, trigger),
-         _ = :esqlite3.fetchall(statement),
+         result = :esqlite3.fetchall(statement),
          {:ok, rows} = db_exec(db, "SELECT #{column_names} FROM #{temp_table}"),
          {:ok, _} = db_exec(db, "DROP TRIGGER IF EXISTS #{trigger_name}"),
          {:ok, _} = db_exec(db, "DROP TABLE IF EXISTS #{temp_table}")
     do
-      rows
+      if is_list(result), do: rows, else: result
     end
   catch
     e ->
