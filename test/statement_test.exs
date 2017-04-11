@@ -72,7 +72,6 @@ defmodule StatementTest do
       stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES ('x') "
                                             <> ";--RETURNING ON INSERT x,id")
 
-
       result = Sqlitex.Statement.fetch_all(stmt, :raw_list)
       assert result == {:error, {:constraint, 'UNIQUE constraint failed: x.str'}}
     end
