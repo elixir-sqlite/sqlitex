@@ -8,6 +8,8 @@ Sqlitex
 
 An Elixir wrapper around [esqlite](https://github.com/mmzeeman/esqlite). The main aim here is to provide convenient usage of sqlite databases.
 
+<a href="https://app.codesponsor.io/link/RJLdpYrCcEHqZEL5w1U2rFtj/mmmries/sqlitex"><img src="https://app.codesponsor.io/embed/RJLdpYrCcEHqZEL5w1U2rFtj/mmmries/sqlitex.svg" style="width: 888px; height: 68px;" alt="Sponsor" /></a>
+
 Updated to 1.0
 ==============
 
@@ -37,8 +39,8 @@ Pass the `bind` option to bind parameterized queries.
 ```elixir
 Sqlitex.with_db('test/fixtures/golfscores.sqlite3', fn(db) ->
   Sqlitex.query(
-    db, 
-    "INSERT INTO players (name, created_at, updated_at) VALUES ($1, $2, $3, $4)", 
+    db,
+    "INSERT INTO players (name, created_at, updated_at) VALUES ($1, $2, $3, $4)",
     bind: ['Mikey', '2012-10-14 05:46:28.318107', '2013-09-06 22:29:36.610911'])
 end)
 # => [[id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]]
