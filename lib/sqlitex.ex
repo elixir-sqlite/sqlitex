@@ -1,7 +1,11 @@
 defmodule Sqlitex do
+  if Version.compare(System.version, "1.3.0") == :lt do
+    @type charlist :: char_list
+  end
+
   @type connection :: {:connection, reference, String.t}
-  @type string_or_charlist :: String.t | char_list
-  @type sqlite_error :: {:error, {:sqlite_error, char_list}}
+  @type string_or_charlist :: String.t | charlist
+  @type sqlite_error :: {:error, {:sqlite_error, charlist}}
 
   @moduledoc """
   Sqlitex gives you a way to create and query sqlite databases.
@@ -28,8 +32,8 @@ defmodule Sqlitex do
   end
 
   @spec open(String.t) :: {:ok, connection}
-  @spec open(char_list) :: {:ok, connection} | {:error, {atom, char_list}}
-  def open(path) when is_binary(path), do: open(String.to_char_list(path))
+  @spec open(charlist) :: {:ok, connection} | {:error, {atom, charlist}}
+  def open(path) when is_binary(path), do: open(string_to_charlist(path))
   def open(path) do
     :esqlite3.open(path)
   end
@@ -73,4 +77,10 @@ defmodule Sqlitex do
     stmt = Sqlitex.SqlBuilder.create_table(name, table_opts, cols)
     exec(db, stmt)
   end
+
+ if Version.compare(System.version, "1.3.0") == :lt do
+   defp string_to_charlist(string), do: String.to_char_list(string)
+ else
+   defp string_to_charlist(string), do: String.to_charlist(string)
+ end
 end

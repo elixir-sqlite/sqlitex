@@ -21,8 +21,12 @@ defmodule Sqlitex.Query do
   * {:error, _} on failure.
   """
 
-  @spec query(Sqlitex.connection, String.t | char_list) :: [[]] | Sqlitex.sqlite_error
-  @spec query(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [Enum.t] | Sqlitex.sqlite_error
+  if Version.compare(System.version, "1.3.0") == :lt do
+    @type charlist :: char_list
+  end
+
+  @spec query(Sqlitex.connection, String.t | charlist) :: [[]] | Sqlitex.sqlite_error
+  @spec query(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t]) :: [Enum.t] | Sqlitex.sqlite_error
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
@@ -35,8 +39,8 @@ defmodule Sqlitex.Query do
 
   Returns the results otherwise.
   """
-  @spec query!(Sqlitex.connection, String.t | char_list) :: [[]]
-  @spec query!(Sqlitex.connection, String.t | char_list, [bind: [], into: Enum.t]) :: [Enum.t]
+  @spec query!(Sqlitex.connection, String.t | charlist) :: [[]]
+  @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t]) :: [Enum.t]
   def query!(db, sql, opts \\ []) do
     case query(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
@@ -64,8 +68,8 @@ defmodule Sqlitex.Query do
   * {:error, _} on failure.
   """
 
-  @spec query_rows(Sqlitex.connection, String.t | char_list) :: {:ok, %{}} | Sqlitex.sqlite_error
-  @spec query_rows(Sqlitex.connection, String.t | char_list, [bind: []]) :: {:ok, %{}} | Sqlitex.sqlite_error
+  @spec query_rows(Sqlitex.connection, String.t | charlist) :: {:ok, %{}} | Sqlitex.sqlite_error
+  @spec query_rows(Sqlitex.connection, String.t | charlist, [bind: []]) :: {:ok, %{}} | Sqlitex.sqlite_error
   def query_rows(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
@@ -78,8 +82,8 @@ defmodule Sqlitex.Query do
 
   Returns the results otherwise.
   """
-  @spec query_rows!(Sqlitex.connection, String.t | char_list) :: [[]]
-  @spec query_rows!(Sqlitex.connection, String.t | char_list, [bind: []]) :: [Enum.t]
+  @spec query_rows!(Sqlitex.connection, String.t | charlist) :: [[]]
+  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: []]) :: [Enum.t]
   def query_rows!(db, sql, opts \\ []) do
     case query_rows(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
