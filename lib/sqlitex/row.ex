@@ -53,7 +53,7 @@ defmodule Sqlitex.Row do
   end
   defp translate_value({float, "decimal"}), do: Decimal.new(float)
   defp translate_value({float, "decimal(" <> rest}) do
-    [precision, scale] = rest |> String.rstrip(?)) |> String.split(",") |> Enum.map(&String.to_integer/1)
+    [precision, scale] = rest |> string_rstrip(?)) |> String.split(",") |> Enum.map(&String.to_integer/1)
     Decimal.with_context %Decimal.Context{precision: precision, rounding: :down}, fn ->
       float |> Float.round(scale) |> Decimal.new |> Decimal.plus
     end
@@ -77,5 +77,11 @@ defmodule Sqlitex.Row do
   defp to_time(<<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary>>) when byte_size(fr) <= 6 do
     fr = String.to_integer(fr <> String.duplicate("0", 6 - String.length(fr)))
     {String.to_integer(hr), String.to_integer(mi), String.to_integer(se), fr}
+  end
+
+  if Version.compare(System.version, "1.5.0") == :lt do
+    defp string_rstrip(string, char), do: String.rstrip(string, char)
+  else
+    defp string_rstrip(string, char), do: String.trim_trailing(string, to_string([char]))
   end
 end
