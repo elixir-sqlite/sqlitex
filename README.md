@@ -8,8 +8,6 @@ Sqlitex
 
 An Elixir wrapper around [esqlite](https://github.com/mmzeeman/esqlite). The main aim here is to provide convenient usage of sqlite databases.
 
-<a href="https://app.codesponsor.io/link/RJLdpYrCcEHqZEL5w1U2rFtj/mmmries/sqlitex"><img src="https://app.codesponsor.io/embed/RJLdpYrCcEHqZEL5w1U2rFtj/mmmries/sqlitex.svg" style="width: 888px; height: 68px;" alt="Sponsor" /></a>
-
 Updated to 1.0
 ==============
 
