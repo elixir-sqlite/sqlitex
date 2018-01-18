@@ -3,7 +3,7 @@ defmodule Sqlitex do
     @type charlist :: char_list
   end
 
-  @type connection :: {:connection, reference, String.t}
+  @type connection :: {:connection, reference, binary()}
   @type string_or_charlist :: String.t | charlist
   @type sqlite_error :: {:error, {:sqlite_error, charlist}}
 
@@ -31,8 +31,7 @@ defmodule Sqlitex do
     :esqlite3.close(db)
   end
 
-  @spec open(String.t) :: {:ok, connection}
-  @spec open(charlist) :: {:ok, connection} | {:error, {atom, charlist}}
+  @spec open(charlist | String.t) :: {:ok, connection} | {:error, {atom, charlist}}
   def open(path) when is_binary(path), do: open(string_to_charlist(path))
   def open(path) do
     :esqlite3.open(path)

@@ -25,8 +25,8 @@ defmodule Sqlitex.Query do
     @type charlist :: char_list
   end
 
-  @spec query(Sqlitex.connection, String.t | charlist) :: [[]] | Sqlitex.sqlite_error
-  @spec query(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t]) :: [Enum.t] | Sqlitex.sqlite_error
+  @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
@@ -82,8 +82,8 @@ defmodule Sqlitex.Query do
 
   Returns the results otherwise.
   """
-  @spec query_rows!(Sqlitex.connection, String.t | charlist) :: [[]]
-  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: []]) :: [Enum.t]
+  @spec query_rows!(Sqlitex.connection, String.t | charlist) :: %{}
+  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: []]) :: %{}
   def query_rows!(db, sql, opts \\ []) do
     case query_rows(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
