@@ -31,8 +31,7 @@ defmodule Sqlitex do
     :esqlite3.close(db)
   end
 
-  @spec open(String.t) :: {:ok, connection}
-  @spec open(charlist) :: {:ok, connection} | {:error, {atom, charlist}}
+  @spec open(charlist | String.t) :: {:ok, connection} | {:error, {atom, charlist}}
   def open(path) when is_binary(path), do: open(string_to_charlist(path))
   def open(path) do
     :esqlite3.open(path)
