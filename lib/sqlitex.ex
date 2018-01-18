@@ -3,7 +3,7 @@ defmodule Sqlitex do
     @type charlist :: char_list
   end
 
-  @type connection :: {:connection, reference, String.t}
+  @type connection :: {:connection, reference, binary()}
   @type string_or_charlist :: String.t | charlist
   @type sqlite_error :: {:error, {:sqlite_error, charlist}}
 

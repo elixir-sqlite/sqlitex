@@ -366,6 +366,7 @@ defmodule Sqlitex.Statement do
     {:ok, _} = db_exec(db, "RELEASE #{sp}")
   end
 
+  @spec db_exec(Sqlitex.connection, iodata()) :: {:ok, [tuple()]}
   defp db_exec(db, sql) do
     case :esqlite3.q(sql, db) do
       {:error, _} = error ->
