@@ -26,7 +26,7 @@ defmodule Sqlitex.Query do
   end
 
   @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
-  @spec query(Sqlitex.connection, String.t | charlist, keyword) :: {:ok, [[]]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
