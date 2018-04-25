@@ -37,7 +37,7 @@ defmodule Sqlitex.Mixfile do
       {:inch_ex, "~> 0.5", only: :dev},
 
       {:excheck, "~> 0.5", only: :test},
-      {:triq, github: "triqng/triq", only: :test},
+      {:triq, "~> 1.2", only: :test},
     ]
   end
 
