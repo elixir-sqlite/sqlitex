@@ -52,61 +52,67 @@ defmodule Sqlitex.Server do
   Starts a SQLite Server (GenServer) instance.
 
   In addition to the options that are typically provided to `GenServer.start_link/3`,
-  you can also specify `stmt_cache_size: (positive_integer)` to override the default
-  limit (20) of statements that are cached when calling `prepare/3`.
+  you can also specify:
+
+  - `stmt_cache_size: (positive_integer)` to override the default limit (20) of statements
+    that are cached when calling `prepare/3`.
+  - `esqlite3_timeout: (positive_integer)` to override `:esqlite3`'s default timeout of 5000 ms for
+    interactions with the database. This can also be set in `config.exs` as
+    `config :sqlitex, esqlite3_timeout: 5_000`.
   """
   def start_link(db_path, opts \\ []) do
     stmt_cache_size = Keyword.get(opts, :stmt_cache_size, 20)
-    GenServer.start_link(__MODULE__, {db_path, stmt_cache_size}, opts)
+    timeout = Keyword.get(opts, :esqlite3_timeout, Application.get_env(:sqlitex, :esqlite3_timeout, 5_000))
+    GenServer.start_link(__MODULE__, {db_path, stmt_cache_size, timeout}, opts)
   end
 
   ## GenServer callbacks
 
-  def init({db_path, stmt_cache_size})
+  def init({db_path, stmt_cache_size, timeout})
     when is_integer(stmt_cache_size) and stmt_cache_size > 0
   do
-    case Sqlitex.open(db_path) do
-      {:ok, db} -> {:ok, {db, __MODULE__.StatementCache.new(db, stmt_cache_size)}}
+    case Sqlitex.open(db_path, timeout) do
+      {:ok, db} -> {:ok, {db, __MODULE__.StatementCache.new(db, stmt_cache_size), timeout}}
       {:error, reason} -> {:stop, reason}
     end
   end
 
-  def handle_call({:exec, sql}, _from, {db, stmt_cache}) do
-    result = Sqlitex.exec(db, sql)
-    {:reply, result, {db, stmt_cache}}
+  def handle_call({:exec, sql}, _from, {db, stmt_cache, timeout}) do
+    result = Sqlitex.exec(db, sql, timeout)
+    {:reply, result, {db, stmt_cache, timeout}}
   end
 
-  def handle_call({:query, sql, opts}, _from, {db, stmt_cache}) do
-    case query_impl(sql, opts, stmt_cache) do
-      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
-      err -> {:reply, err, {db, stmt_cache}}
+  def handle_call({:query, sql, opts}, _from, {db, stmt_cache, timeout}) do
+    case query_impl(sql, opts, stmt_cache, timeout) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, timeout}}
+      err -> {:reply, err, {db, stmt_cache, timeout}}
     end
   end
 
-  def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache}) do
-    case query_rows_impl(sql, opts, stmt_cache) do
-      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
-      err -> {:reply, err, {db, stmt_cache}}
+  def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache, timeout}) do
+    case query_rows_impl(sql, opts, stmt_cache, timeout) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, timeout}}
+      err -> {:reply, err, {db, stmt_cache, timeout}}
     end
   end
 
-  def handle_call({:prepare, sql}, _from, {db, stmt_cache}) do
-    case prepare_impl(sql, stmt_cache) do
-      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache}}
-      err -> {:reply, err, {db, stmt_cache}}
+  def handle_call({:prepare, sql}, _from, {db, stmt_cache, timeout}) do
+    case prepare_impl(sql, stmt_cache, timeout) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, timeout}}
+      err -> {:reply, err, {db, stmt_cache, timeout}}
     end
   end
 
-  def handle_call({:create_table, name, table_opts, cols}, _from, {db, stmt_cache}) do
-    result = Sqlitex.create_table(db, name, table_opts, cols)
-    {:reply, result, {db, stmt_cache}}
+  def handle_call({:create_table, name, table_opts, cols}, _from, {db, stmt_cache, timeout}) do
+    result = Sqlitex.create_table(db, name, table_opts, cols, timeout)
+    {:reply, result, {db, stmt_cache, timeout}}
   end
 
-  def handle_cast(:stop, {db, stmt_cache}) do
-    {:stop, :normal, {db, stmt_cache}}
+  def handle_cast(:stop, {db, stmt_cache, timeout}) do
+    {:stop, :normal, {db, stmt_cache, timeout}}
   end
 
-  def terminate(_reason, {db, _stmt_cache}) do
+  def terminate(_reason, {db, _stmt_cache, _timeout}) do
     Sqlitex.close(db)
     :ok
   end
@@ -157,24 +163,24 @@ defmodule Sqlitex.Server do
 
   ## Helpers
 
-  defp query_impl(sql, opts, stmt_cache) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+  defp query_impl(sql, opts, stmt_cache, esqlite3_timeout) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, esqlite3_timeout),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), esqlite3_timeout),
          {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
     do: {:ok, rows, new_cache}
   end
 
-  defp query_rows_impl(sql, opts, stmt_cache) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+  defp query_rows_impl(sql, opts, stmt_cache, esqlite3_timeout) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, esqlite3_timeout),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), esqlite3_timeout),
          {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
     do: {:ok,
          %{rows: rows, columns: stmt.column_names, types: stmt.column_types},
          new_cache}
   end
 
-  defp prepare_impl(sql, stmt_cache) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql),
+  defp prepare_impl(sql, stmt_cache, esqlite3_timeout) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, esqlite3_timeout),
     do: {:ok, %{columns: stmt.column_names, types: stmt.column_types}, new_cache}
   end
 
