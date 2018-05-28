@@ -15,6 +15,8 @@ defmodule Sqlitex.Query do
   * `bind` - If your query has parameters in it, you should provide the options
     to bind as a list.
   * `into` - The collection to put results into.  This defaults to a list.
+  * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
+    to 5000, or to `Application.get_env(:sqlitex, :esqlite3_timeout)` if set.
 
   ## Returns
   * [results...] on success
@@ -28,8 +30,8 @@ defmodule Sqlitex.Query do
   @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
   @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
   def query(db, sql, opts \\ []) do
-    with {:ok, stmt} <- Statement.prepare(db, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+    with {:ok, stmt} <- Statement.prepare(db, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
          {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
     do: {:ok, res}
   end
@@ -40,7 +42,7 @@ defmodule Sqlitex.Query do
   Returns the results otherwise.
   """
   @spec query!(Sqlitex.connection, String.t | charlist) :: [[]]
-  @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t]) :: [Enum.t]
+  @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t, db_timeout: integer()]) :: [Enum.t]
   def query!(db, sql, opts \\ []) do
     case query(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
@@ -62,6 +64,8 @@ defmodule Sqlitex.Query do
 
   * `bind` - If your query has parameters in it, you should provide the options
     to bind as a list.
+  * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
+    to 5000, or to `Application.get_env(:sqlitex, :esqlite3_timeout)` if set.
 
   ## Returns
   * {:ok, %{rows: [[1, 2], [2, 3]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}} on success
@@ -69,10 +73,10 @@ defmodule Sqlitex.Query do
   """
 
   @spec query_rows(Sqlitex.connection, String.t | charlist) :: {:ok, %{}} | Sqlitex.sqlite_error
-  @spec query_rows(Sqlitex.connection, String.t | charlist, [bind: []]) :: {:ok, %{}} | Sqlitex.sqlite_error
+  @spec query_rows(Sqlitex.connection, String.t | charlist, [bind: [], db_timeout: integer()]) :: {:ok, %{}} | Sqlitex.sqlite_error
   def query_rows(db, sql, opts \\ []) do
-    with {:ok, stmt} <- Statement.prepare(db, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
+    with {:ok, stmt} <- Statement.prepare(db, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
          {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
     do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
   end
@@ -83,7 +87,7 @@ defmodule Sqlitex.Query do
   Returns the results otherwise.
   """
   @spec query_rows!(Sqlitex.connection, String.t | charlist) :: %{}
-  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: []]) :: %{}
+  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: [], db_timeout: integer()]) :: %{}
   def query_rows!(db, sql, opts \\ []) do
     case query_rows(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason

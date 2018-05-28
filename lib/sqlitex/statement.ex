@@ -73,6 +73,8 @@ defmodule Sqlitex.Statement do
             column_names: [],
             column_types: []
 
+  alias Sqlitex.Config
+
   @doc """
   Prepare a Sqlitex.Statement
 
@@ -81,26 +83,32 @@ defmodule Sqlitex.Statement do
   * `db` - The database to prepare the statement for.
   * `sql` - The SQL of the statement to prepare.
 
+  Also accepts the following keyword options:
+
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :esqlite3_timeout value in Application env.
+
   ## Returns
 
   * `{:ok, statement}` on success
   * See `:esqlite3.prepare` for errors.
   """
-  def prepare(db, sql) do
-    with {:ok, stmt} <- do_prepare(db, sql),
-         {:ok, stmt} <- get_column_names(stmt),
-         {:ok, stmt} <- get_column_types(stmt),
+  def prepare(db, sql, opts \\ []) do
+    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout)
+
+    with {:ok, stmt} <- do_prepare(db, sql, timeout),
+         {:ok, stmt} <- get_column_names(stmt, timeout),
+         {:ok, stmt} <- get_column_types(stmt, timeout),
          {:ok, stmt} <- extract_returning_clause(stmt, sql),
     do: {:ok, stmt}
   end
 
   @doc """
-  Same as `prepare/2` but raises a Sqlitex.Statement.PrepareError on error.
+  Same as `prepare/3` but raises a Sqlitex.Statement.PrepareError on error.
 
   Returns a new statement otherwise.
   """
-  def prepare!(db, sql) do
-    case prepare(db, sql) do
+  def prepare!(db, sql, opts \\ []) do
+    case prepare(db, sql, opts) do
       {:ok, statement} -> statement
       {:error, reason} -> raise Sqlitex.Statement.PrepareError, reason: reason
     end
@@ -113,6 +121,10 @@ defmodule Sqlitex.Statement do
 
   * `statement` - The statement to bind values into.
   * `values` - A list of values to bind into the statement.
+
+  Also accepts the following keyword options:
+
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :esqlite3_timeout value in Application env.
 
   ## Returns
 
@@ -129,20 +141,22 @@ defmodule Sqlitex.Statement do
   * `datetime` - Converted into a string.  See datetime_to_string
   * `%Decimal` -  Converted into a number.
   """
-  def bind_values(statement, values) do
-    case :esqlite3.bind(statement.statement, translate_bindings(values)) do
+  def bind_values(statement, values, opts \\ []) do
+    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout)
+
+    case :esqlite3.bind(statement.statement, translate_bindings(values), timeout) do
       {:error, _} = error -> error
       :ok -> {:ok, statement}
     end
   end
 
   @doc """
-  Same as `bind_values/2` but raises a Sqlitex.Statement.BindValuesError on error.
+  Same as `bind_values/3` but raises a Sqlitex.Statement.BindValuesError on error.
 
   Returns the statement otherwise.
   """
-  def bind_values!(statement, values) do
-    case bind_values(statement, values) do
+  def bind_values!(statement, values, opts \\ []) do
+    case bind_values(statement, values, opts) do
       {:ok, statement} -> statement
       {:error, reason} -> raise Sqlitex.Statement.BindValuesError, reason: reason
     end
@@ -199,13 +213,19 @@ defmodule Sqlitex.Statement do
 
   * `statement` - The statement to run.
 
+  Also accepts the following keyword options:
+
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :esqlite3_timeout value in Application env.
+
   ## Returns
 
   * `:ok`
   * `{:error, error}`
   """
-  def exec(statement) do
-    case :esqlite3.step(statement.statement) do
+  def exec(statement, opts \\ []) do
+    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout)
+
+    case :esqlite3.step(statement.statement, timeout) do
       # esqlite3.step returns some odd values, so lets translate them:
       :"$done" -> :ok
       :"$busy" -> {:error, {:busy, "Sqlite database is busy"}}
@@ -214,37 +234,37 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Same as `exec/1` but raises a Sqlitex.Statement.ExecError on error.
+  Same as `exec/2` but raises a Sqlitex.Statement.ExecError on error.
 
   Returns :ok otherwise.
   """
-  def exec!(statement) do
-    case exec(statement) do
+  def exec!(statement, opts \\ []) do
+    case exec(statement, opts) do
       :ok -> :ok
       {:error, reason} -> raise Sqlitex.Statement.ExecError, reason: reason
     end
   end
 
-  defp do_prepare(db, sql) do
-    case :esqlite3.prepare(sql, db) do
+  defp do_prepare(db, sql, timeout) do
+    case :esqlite3.prepare(sql, db, timeout) do
       {:ok, statement} ->
         {:ok, %Sqlitex.Statement{database: db, statement: statement}}
       other -> other
     end
   end
 
-  defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
+  defp get_column_names(%Sqlitex.Statement{statement: sqlite_statement} = statement, timeout) do
     names =
       sqlite_statement
-      |> :esqlite3.column_names
+      |> :esqlite3.column_names(timeout)
       |> Tuple.to_list
     {:ok, %Sqlitex.Statement{statement | column_names: names}}
   end
 
-  defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement} = statement) do
+  defp get_column_types(%Sqlitex.Statement{statement: sqlite_statement} = statement, timeout) do
     types =
       sqlite_statement
-      |> :esqlite3.column_types
+      |> :esqlite3.column_types(timeout)
       |> Tuple.to_list
     {:ok, %Sqlitex.Statement{statement | column_types: types}}
   end

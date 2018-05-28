@@ -25,17 +25,17 @@ defmodule Sqlitex.Server.StatementCache do
 
   Will return `{:error, reason}` if SQLite is unable to prepare the statement.
   """
-  def prepare(%__MODULE__{cached_stmts: cached_stmts} = cache, sql)
+  def prepare(%__MODULE__{cached_stmts: cached_stmts} = cache, sql, opts \\ [])
     when is_binary(sql) and byte_size(sql) > 0
   do
     case Map.fetch(cached_stmts, sql) do
       {:ok, stmt} -> {update_cache_for_read(cache, sql), stmt}
-      :error -> prepare_new_statement(cache, sql)
+      :error -> prepare_new_statement(cache, sql, opts)
     end
   end
 
-  defp prepare_new_statement(%__MODULE__{db: db} = cache, sql) do
-    case Sqlitex.Statement.prepare(db, sql) do
+  defp prepare_new_statement(%__MODULE__{db: db} = cache, sql, opts \\ []) do
+    case Sqlitex.Statement.prepare(db, sql, opts) do
       {:ok, prepared} ->
         cache = cache
           |> store_new_stmt(sql, prepared)
