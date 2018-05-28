@@ -30,7 +30,7 @@ defmodule Sqlitex do
   Sqlitex uses the Erlang library [esqlite](https://github.com/mmzeeman/esqlite)
   which accepts a timeout parameter for almost all interactions with the database.
   The default value for this timeout is 5000 ms. Many functions in Sqlitex accept
-  a timeout parameter that is passed on to the esqlite calls and that also defaults
+  a `:db_timeout` option that is passed on to the esqlite calls and that also defaults
   to 5000 ms. If required, this default value can be overridden globally with the
   following in your `config.exs`:
 
@@ -40,29 +40,32 @@ defmodule Sqlitex do
   ```
   """
 
-  @esqlite3_timeout Application.get_env(:sqlitex, :esqlite3_timeout, 5_000)
+  alias Sqlitex.Config
 
-  @spec close(connection, integer()) :: :ok
-  def close(db, timeout \\ @esqlite3_timeout) do
+  @spec close(connection, Keyword.t) :: :ok
+  def close(db, opts \\ []) do
+    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
     :esqlite3.close(db, timeout)
   end
 
-  @spec open(charlist | String.t, integer()) :: {:ok, connection} | {:error, {atom, charlist}}
-  def open(path, timeout \\ @esqlite3_timeout)
-  def open(path, timeout) when is_binary(path), do: open(string_to_charlist(path), timeout)
-  def open(path, timeout) do
+  @spec open(charlist | String.t, Keyword.t) :: {:ok, connection} | {:error, {atom, charlist}}
+  def open(path, opts \\ [])
+  def open(path, opts) when is_binary(path), do: open(string_to_charlist(path), opts)
+  def open(path, opts) do
+    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
     :esqlite3.open(path, timeout)
   end
 
-  def with_db(path, fun, timeout \\ @esqlite3_timeout) do
-    {:ok, db} = open(path, timeout)
+  def with_db(path, fun, opts \\ []) do
+    {:ok, db} = open(path, opts)
     res = fun.(db)
-    close(db, timeout)
+    close(db, opts)
     res
   end
 
-  @spec exec(connection, string_or_charlist, integer()) :: :ok | sqlite_error
-  def exec(db, sql, timeout \\ @esqlite3_timeout) do
+  @spec exec(connection, string_or_charlist, Keyword.t) :: :ok | sqlite_error
+  def exec(db, sql, opts \\ []) do
+    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
     :esqlite3.exec(sql, db, timeout)
   end
 
@@ -89,9 +92,9 @@ defmodule Sqlitex do
   **id: :integer, name: {:text, [:not_null]}**
 
   """
-  def create_table(db, name, table_opts \\ [], cols, timeout \\ @esqlite3_timeout) do
+  def create_table(db, name, table_opts \\ [], cols, call_opts \\ []) do
     stmt = Sqlitex.SqlBuilder.create_table(name, table_opts, cols)
-    exec(db, stmt, timeout)
+    exec(db, stmt, call_opts)
   end
 
  if Version.compare(System.version, "1.3.0") == :lt do

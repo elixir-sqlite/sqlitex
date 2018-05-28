@@ -15,7 +15,7 @@ defmodule Sqlitex.Query do
   * `bind` - If your query has parameters in it, you should provide the options
     to bind as a list.
   * `into` - The collection to put results into.  This defaults to a list.
-  * `timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
+  * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
     to 5000, or to `Application.get_env(:sqlitex, :esqlite3_timeout)` if set.
 
   ## Returns
@@ -30,7 +30,10 @@ defmodule Sqlitex.Query do
   @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
   @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
   def query(db, sql, opts \\ []) do
-    do_query(db, sql, opts, Keyword.get(opts, :timeout, nil))
+    with {:ok, stmt} <- Statement.prepare(db, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
+         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
+    do: {:ok, res}
   end
 
   @doc """
@@ -39,25 +42,12 @@ defmodule Sqlitex.Query do
   Returns the results otherwise.
   """
   @spec query!(Sqlitex.connection, String.t | charlist) :: [[]]
-  @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t, timeout: integer()]) :: [Enum.t]
+  @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t, db_timeout: integer()]) :: [Enum.t]
   def query!(db, sql, opts \\ []) do
     case query(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
       {:ok, results} -> results
     end
-  end
-
-  defp do_query(db, sql, opts, nil) do
-    with {:ok, stmt} <- Statement.prepare(db, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
-         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
-    do: {:ok, res}
-  end
-  defp do_query(db, sql, opts, timeout) do
-    with {:ok, stmt} <- Statement.prepare(db, sql, timeout),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), timeout),
-         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
-    do: {:ok, res}
   end
 
   @doc """
@@ -74,7 +64,7 @@ defmodule Sqlitex.Query do
 
   * `bind` - If your query has parameters in it, you should provide the options
     to bind as a list.
-  * `timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
+  * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
     to 5000, or to `Application.get_env(:sqlitex, :esqlite3_timeout)` if set.
 
   ## Returns
@@ -83,9 +73,12 @@ defmodule Sqlitex.Query do
   """
 
   @spec query_rows(Sqlitex.connection, String.t | charlist) :: {:ok, %{}} | Sqlitex.sqlite_error
-  @spec query_rows(Sqlitex.connection, String.t | charlist, [bind: [], timeout: integer()]) :: {:ok, %{}} | Sqlitex.sqlite_error
+  @spec query_rows(Sqlitex.connection, String.t | charlist, [bind: [], db_timeout: integer()]) :: {:ok, %{}} | Sqlitex.sqlite_error
   def query_rows(db, sql, opts \\ []) do
-    do_query_rows(db, sql, opts, Keyword.get(opts, :timeout, nil))
+    with {:ok, stmt} <- Statement.prepare(db, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
+         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
+    do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
   end
 
   @doc """
@@ -94,24 +87,11 @@ defmodule Sqlitex.Query do
   Returns the results otherwise.
   """
   @spec query_rows!(Sqlitex.connection, String.t | charlist) :: %{}
-  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: [], timeout: integer()]) :: %{}
+  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: [], db_timeout: integer()]) :: %{}
   def query_rows!(db, sql, opts \\ []) do
     case query_rows(db, sql, opts) do
       {:error, reason} -> raise Sqlitex.QueryError, reason: reason
       {:ok, results} -> results
     end
-  end
-
-  defp do_query_rows(db, sql, opts, nil) do
-    with {:ok, stmt} <- Statement.prepare(db, sql),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, [])),
-         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
-    do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
-  end
-  defp do_query_rows(db, sql, opts, timeout) do
-    with {:ok, stmt} <- Statement.prepare(db, sql, timeout),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), timeout),
-         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
-    do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
   end
 end
