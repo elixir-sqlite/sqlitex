@@ -1,9 +1,7 @@
 defmodule Sqlitex.Config do
   @moduledoc false
 
-  def esqlite3_timeout do
-    Application.get_env(:sqlitex, :esqlite3_timeout, default_esqlite3_timeout())
+  def db_timeout do
+    Application.get_env(:sqlitex, :db_timeout, 5_000)
   end
-
-  def default_esqlite3_timeout, do: 5_000
 end

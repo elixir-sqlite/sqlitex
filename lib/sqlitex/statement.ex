@@ -85,7 +85,7 @@ defmodule Sqlitex.Statement do
 
   Also accepts the following keyword options:
 
-  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :esqlite3_timeout value in Application env.
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :db_timeout value in Application env.
 
   ## Returns
 
@@ -93,7 +93,7 @@ defmodule Sqlitex.Statement do
   * See `:esqlite3.prepare` for errors.
   """
   def prepare(db, sql, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout)
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
 
     with {:ok, stmt} <- do_prepare(db, sql, timeout),
          {:ok, stmt} <- get_column_names(stmt, timeout),
@@ -124,7 +124,7 @@ defmodule Sqlitex.Statement do
 
   Also accepts the following keyword options:
 
-  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :esqlite3_timeout value in Application env.
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :db_timeout value in Application env.
 
   ## Returns
 
@@ -142,7 +142,7 @@ defmodule Sqlitex.Statement do
   * `%Decimal` -  Converted into a number.
   """
   def bind_values(statement, values, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout)
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
 
     case :esqlite3.bind(statement.statement, translate_bindings(values), timeout) do
       {:error, _} = error -> error
@@ -215,7 +215,7 @@ defmodule Sqlitex.Statement do
 
   Also accepts the following keyword options:
 
-  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :esqlite3_timeout value in Application env.
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :db_timeout value in Application env.
 
   ## Returns
 
@@ -223,7 +223,7 @@ defmodule Sqlitex.Statement do
   * `{:error, error}`
   """
   def exec(statement, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout)
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
 
     case :esqlite3.step(statement.statement, timeout) do
       # esqlite3.step returns some odd values, so lets translate them:

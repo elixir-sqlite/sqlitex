@@ -59,11 +59,11 @@ defmodule Sqlitex.Server do
     that are cached when calling `prepare/3`.
   - `db_timeout: (positive_integer)` to override `:esqlite3`'s default timeout of 5000 ms for
     interactions with the database. This can also be set in `config.exs` as
-    `config :sqlitex, esqlite3_timeout: 5_000`.
+    `config :sqlitex, db_timeout: 5_000`.
   """
   def start_link(db_path, opts \\ []) do
     stmt_cache_size = Keyword.get(opts, :stmt_cache_size, 20)
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
     GenServer.start_link(__MODULE__, {db_path, stmt_cache_size, timeout}, opts)
   end
 

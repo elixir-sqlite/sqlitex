@@ -35,24 +35,25 @@ defmodule Sqlitex do
   following in your `config.exs`:
 
   ```
-  config :sqlitex,
-    esqlite3_timeout: 10_000 # or other positive integer number of ms
+  config :sqlitex, db_timeout: 10_000 # or other positive integer number of ms
   ```
   """
 
   alias Sqlitex.Config
 
+  @spec close(connection) :: :ok
   @spec close(connection, Keyword.t) :: :ok
   def close(db, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
     :esqlite3.close(db, timeout)
   end
 
+  @spec open(charlist | String.t) :: {:ok, connection} | {:error, {atom, charlist}}
   @spec open(charlist | String.t, Keyword.t) :: {:ok, connection} | {:error, {atom, charlist}}
   def open(path, opts \\ [])
   def open(path, opts) when is_binary(path), do: open(string_to_charlist(path), opts)
   def open(path, opts) do
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
     :esqlite3.open(path, timeout)
   end
 
@@ -63,9 +64,10 @@ defmodule Sqlitex do
     res
   end
 
+  @spec exec(connection, string_or_charlist) :: :ok | sqlite_error
   @spec exec(connection, string_or_charlist, Keyword.t) :: :ok | sqlite_error
   def exec(db, sql, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.esqlite3_timeout())
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
     :esqlite3.exec(sql, db, timeout)
   end
 
