@@ -8,6 +8,8 @@ elixir:
 cache:
   directories:
   - /home/travis/.mix
+  - /home/travis/build/mmmries/sqlitex/deps
+  - /home/travis/build/mmmries/sqlitex/_build
 before_script:
  - mix dialyzer --plt
 script:
