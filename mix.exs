@@ -2,20 +2,23 @@ defmodule Sqlitex.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :sqlitex,
-     version: "1.4.0",
-     elixir: "~> 1.2",
-     deps: deps(),
-     package: package(),
-     test_coverage: [tool: ExCoveralls],
-     preferred_cli_env: [
-        "coveralls": :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test],
-     description: """
-      A thin Elixir wrapper around esqlite
-    """]
+    [
+      app: :sqlitex,
+      version: "1.4.0",
+      elixir: "~> 1.2",
+      deps: deps(),
+      package: package(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+         "coveralls": :test,
+         "coveralls.detail": :test,
+         "coveralls.post": :test,
+         "coveralls.html": :test],
+      description: """
+        A thin Elixir wrapper around esqlite
+      """,
+      dialyzer: [plt_add_deps: :transitive],
+    ]
   end
 
   # Configuration for the OTP application
@@ -26,7 +29,7 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, "~> 0.2.3"},
+      {:esqlite, "~> 0.2.4"},
       {:decimal, "~> 1.1"},
 
       {:credo, "~> 0.4", only: :dev},

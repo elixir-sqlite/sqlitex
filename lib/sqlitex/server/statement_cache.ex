@@ -34,7 +34,7 @@ defmodule Sqlitex.Server.StatementCache do
     end
   end
 
-  defp prepare_new_statement(%__MODULE__{db: db} = cache, sql, opts \\ []) do
+  defp prepare_new_statement(%__MODULE__{db: db} = cache, sql, opts) do
     case Sqlitex.Statement.prepare(db, sql, opts) do
       {:ok, prepared} ->
         cache = cache

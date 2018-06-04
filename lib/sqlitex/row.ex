@@ -55,7 +55,7 @@ defmodule Sqlitex.Row do
   defp translate_value({float, "decimal(" <> rest}) do
     [precision, scale] = rest |> string_rstrip(?)) |> String.split(",") |> Enum.map(&String.to_integer/1)
     Decimal.with_context %Decimal.Context{precision: precision, rounding: :down}, fn ->
-      float |> Float.round(scale) |> Decimal.new |> Decimal.plus
+      float |> Float.round(scale) |> Float.to_string |> Decimal.new |> Decimal.plus
     end
   end
 
