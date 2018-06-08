@@ -213,6 +213,14 @@ defmodule SqlitexTest do
     |> Enum.each(fn {res, ans} -> assert Decimal.equal?(res, ans) end)
   end
 
+  test "decimal types with spaces near scale and precision" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "CREATE TABLE t (f1 DECIMAL(3,2), f2 DECIMAL(3, 2), f3 DECIMAL( 3 ,2 ))")
+    {:ok, []} = Sqlitex.query(db, "INSERT INTO t VALUES (?,?,?)", bind: [Decimal.new("1.23"), Decimal.new("4.56"), Decimal.new("7.89")])
+    [row] = Sqlitex.query!(db, "SELECT f1, f2, f3 FROM t")
+    assert row == [f1: Decimal.new("1.23"), f2: Decimal.new("4.56"), f3: Decimal.new("7.89")]
+  end
+
   test "it handles datetime, date, time with empty string" do
     {:ok, db} = Sqlitex.open(":memory:")
     :ok = Sqlitex.exec(db, "CREATE TABLE t (a datetime NOT NULL, b date NOT NULL, c time NOT NULL)")
