@@ -38,7 +38,7 @@ Pass the `bind` option to bind parameterized queries.
 Sqlitex.with_db('test/fixtures/golfscores.sqlite3', fn(db) ->
   Sqlitex.query(
     db,
-    "INSERT INTO players (name, created_at, updated_at) VALUES ($1, $2, $3, $4)",
+    "INSERT INTO players (name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
     bind: ['Mikey', '2012-10-14 05:46:28.318107', '2013-09-06 22:29:36.610911'])
 end)
 # => [[id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28}}, updated_at: {{2013,09,06},{22,29,36}}, type: nil]]
@@ -52,13 +52,13 @@ children = [
       # Start the endpoint when the application starts
       worker(Golf.Endpoint, []),
 
-      worker(Sqlitex.Server, ['golf.sqlite3', [name: Sqlitex.Server]])
+      worker(Sqlitex.Server, ['golf.sqlite3', [name: Golf.DB]])
     ]
 ```
 
 Now that the GenServer is running you can make queries via
 ```elixir
-Sqlitex.Server.query(Sqlitex.Server,
+Sqlitex.Server.query(Golf.DB,
                      "SELECT g.id, g.course_id, g.played_at, c.name AS course
                       FROM games AS g
                       INNER JOIN courses AS c ON g.course_id = c.id
