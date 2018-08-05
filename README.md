@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/mmmries/sqlitex.svg?branch=master)](https://travis-ci.org/mmmries/sqlitex)
-[![Inline docs](http://inch-ci.org/github/mmmries/sqlitex.svg?branch=master)](http://inch-ci.org/github/mmmries/sqlitex)
+[![Build Status](https://travis-ci.org/Sqlite-Ecto/sqlitex.svg?branch=master)](https://travis-ci.org/Sqlite-Ecto/sqlitex)
+[![Inline docs](http://inch-ci.org/github/Sqlite-Ecto/sqlitex.svg?branch=master)](http://inch-ci.org/github/Sqlite-Ecto/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/v/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/dt/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 
