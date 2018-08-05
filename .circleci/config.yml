@@ -1,0 +1,26 @@
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: circleci/elixir:1.6.6-otp-21
+    environment:
+      MIX_ENV: test
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-dependency-cache-{{ checksum "mix.lock" }}
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix deps.compile
+      - run: mix compile
+      # not passing yet
+      # - run: mix credo --strict
+      - run: mix coveralls.circle
+      - run: mix inch.report
+      - save_cache:
+          key: v2-dependency-cache-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+            - deps

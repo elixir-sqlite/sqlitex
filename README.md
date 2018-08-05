@@ -1,22 +1,20 @@
-[![Build Status](https://travis-ci.org/mmmries/sqlitex.svg?branch=master)](https://travis-ci.org/mmmries/sqlitex)
-[![Inline docs](http://inch-ci.org/github/mmmries/sqlitex.svg?branch=master)](http://inch-ci.org/github/mmmries/sqlitex)
+[![CircleCI](https://circleci.com/gh/Sqlite-Ecto/sqlitex.svg?style=svg)](https://circleci.com/gh/Sqlite-Ecto/sqlitex)
+[![Coverage Status](https://coveralls.io/repos/github/Sqlite-Ecto/sqlitex/badge.svg?branch=master)](https://coveralls.io/github/Sqlite-Ecto/sqlitex?branch=master)
+[![Inline docs](http://inch-ci.org/github/Sqlite-Ecto/sqlitex.svg)](http://inch-ci.org/github/Sqlite-Ecto/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/v/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/dt/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 
-Sqlitex
-=======
+# Sqlitex
 
 An Elixir wrapper around [esqlite](https://github.com/mmzeeman/esqlite). The main aim here is to provide convenient usage of sqlite databases.
 
-Updated to 1.0
-==============
+# Updated to 1.0
 
 With the 1.0 release we made just a single breaking change. `Sqlitex.Query.query` previously returned just the raw query results on success and `{:error, reason}` on failure.
 This has been bothering us for a while so we changed it in 1.0 to return `{:ok, results}` on success and `{:error, reason}` on failure.
 This should make it easier to pattern match on. The `Sqlitex.Query.query!` function has kept its same functionality of returning bare results on success and raising an error on failure.
 
-Usage
-=====
+# Usage
 
 The simple way to use sqlitex is just to open a database and run a query
 
@@ -65,9 +63,5 @@ Sqlitex.Server.query(Golf.DB,
                       ORDER BY g.played_at DESC LIMIT 10")
 ```
 
-Plans
-=====
-
-I started this project mostly as a way to learn about Elixir.
-Some other people have found it useful and have done the hard work to make it work with ecto [v1.X](https://github.com/jazzyb/sqlite_ecto) and [v2.X](https://github.com/scouten/sqlite_ecto2).
-I'm not currently using this for any production-level projects, but I'm happy to continue maintaining it as long as people find it useful.
+# Looking for Ecto?
+Check out the [Sqlite Ecto2 adapter](https://github.com/Sqlite-Ecto/sqlite_ecto2)

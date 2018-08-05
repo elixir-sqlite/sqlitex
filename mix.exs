@@ -5,12 +5,13 @@ defmodule Sqlitex.Mixfile do
     [
       app: :sqlitex,
       version: "1.4.2",
-      elixir: "~> 1.2",
+      elixir: "~> 1.4",
       deps: deps(),
       package: package(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-         "coveralls": :test,
+         coveralls: :test,
+         "coveralls.circle": :test,
          "coveralls.detail": :test,
          "coveralls.post": :test,
          "coveralls.html": :test],
@@ -23,32 +24,29 @@ defmodule Sqlitex.Mixfile do
 
   # Configuration for the OTP application
   def application do
-    [applications: [:logger, :esqlite]]
+    [extra_applications: [:logger]]
   end
 
   # Type `mix help deps` for more examples and options
   defp deps do
     [
       {:esqlite, "~> 0.2.4"},
-      {:decimal, "~> 1.1"},
-
-      {:credo, "~> 0.4", only: :dev},
-      {:dialyxir, "~> 0.5.1", only: :dev, runtime: false},
-      {:earmark, "~> 1.2", only: :dev},
-      {:excoveralls, "~> 0.6", only: :test},
-      {:ex_doc, "~> 0.18", only: :dev},
-      {:inch_ex, "~> 0.5", only: :dev},
-
-      {:excheck, "~> 0.5", only: :test},
+      {:decimal, "~> 1.5"},
+      {:credo, "~> 0.10", only: :dev},
+      {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.9", only: :test},
+      {:ex_doc, "~> 0.18", only: :docs, runtime: false},
+      {:excheck, "~> 0.6", only: :test},
+      {:inch_ex, "~> 1.0", only: :test},
       {:triq, "~> 1.2", only: :test},
     ]
   end
 
   defp package do
-   [maintainers: ["Michael Ries", "Jason M Barnes", "Graeme Coupar", "Eric Scouten"],
+   [maintainers: ["Michael Ries", "Jason M Barnes", "Graeme Coupar", "Eric Scouten", "Connor Rigby"],
      licenses: ["MIT"],
      links: %{
-      github: "https://github.com/mmmries/sqlitex",
+      github: "https://github.com/Sqlite-Ecto/sqlitex",
       docs: "http://hexdocs.pm/sqlitex"}]
   end
 end
