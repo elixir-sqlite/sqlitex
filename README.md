@@ -1,5 +1,6 @@
-[![Build Status](https://travis-ci.org/Sqlite-Ecto/sqlitex.svg?branch=master)](https://travis-ci.org/Sqlite-Ecto/sqlitex)
-[![Inline docs](http://inch-ci.org/github/Sqlite-Ecto/sqlitex.svg?branch=master)](http://inch-ci.org/github/Sqlite-Ecto/sqlitex)
+[![CircleCI](https://circleci.com/gh/Sqlite-Ecto/sqlitex.svg?style=svg)](https://circleci.com/gh/Sqlite-Ecto/sqlitex)
+[![Coverage Status](https://coveralls.io/repos/github/Sqlite-Ecto/sqlitex/badge.svg?branch=master)](https://coveralls.io/github/Sqlite-Ecto/sqlitex?branch=master)
+[![Inline docs](http://inch-ci.org/github/Sqlite-Ecto/sqlitex.svg)](http://inch-ci.org/github/Sqlite-Ecto/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/v/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/dt/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 
