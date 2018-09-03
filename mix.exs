@@ -37,7 +37,6 @@ defmodule Sqlitex.Mixfile do
       {:excoveralls, "~> 0.10", only: :test},
       {:ex_doc, "~> 0.19", only: :docs, runtime: false},
       {:excheck, "~> 0.6", only: :test},
-      {:inch_ex, "~> 1.0", only: :test},
       {:triq, "~> 1.2", only: :test},
     ]
   end
