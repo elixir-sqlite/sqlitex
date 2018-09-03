@@ -2,7 +2,7 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: circleci/elixir:1.6.6-otp-21
+      - image: circleci/elixir:1.7.3-otp-21
     environment:
       MIX_ENV: test
     steps:
