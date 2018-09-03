@@ -18,7 +18,6 @@ jobs:
       # not passing yet
       # - run: mix credo --strict
       - run: mix coveralls.circle
-      - run: mix inch.report
       - save_cache:
           key: v2-dependency-cache-{{ checksum "mix.lock" }}
           paths:
