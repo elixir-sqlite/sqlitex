@@ -4,7 +4,7 @@ defmodule Sqlitex.Mixfile do
   def project do
     [
       app: :sqlitex,
-      version: "1.4.2",
+      version: "1.4.3",
       elixir: "~> 1.4",
       deps: deps(),
       package: package(),
@@ -34,8 +34,8 @@ defmodule Sqlitex.Mixfile do
       {:decimal, "~> 1.5"},
       {:credo, "~> 0.10", only: :dev},
       {:dialyxir, "~> 1.0.0-rc.3", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.9", only: :test},
-      {:ex_doc, "~> 0.18", only: :docs, runtime: false},
+      {:excoveralls, "~> 0.10", only: :test},
+      {:ex_doc, "~> 0.19", only: :docs, runtime: false},
       {:excheck, "~> 0.6", only: :test},
       {:inch_ex, "~> 1.0", only: :test},
       {:triq, "~> 1.2", only: :test},
