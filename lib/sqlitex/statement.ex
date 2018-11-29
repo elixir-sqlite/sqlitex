@@ -1,7 +1,7 @@
 defmodule Sqlitex.Statement do
   alias Sqlitex.Row
   @moduledoc """
-  Provides an interface for working with sqlite prepared statements.
+  Provides an interface for working with SQLite prepared statements.
 
   Care should be taken when using prepared statements directly - they are not
   immutable objects like most things in Elixir. Sharing a statement between
@@ -115,7 +115,7 @@ defmodule Sqlitex.Statement do
   end
 
   @doc """
-  Binds values to a Sqlitex.Statement
+  Binds values to a Sqlitex.Statement.
 
   ## Parameters
 
@@ -226,7 +226,7 @@ defmodule Sqlitex.Statement do
     timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
 
     case :esqlite3.step(statement.statement, timeout) do
-      # esqlite3.step returns some odd values, so lets translate them:
+      # esqlite3.step returns some odd values, so let's translate them:
       :"$done" -> :ok
       :"$busy" -> {:error, {:busy, "Sqlite database is busy"}}
       other -> other
@@ -323,14 +323,17 @@ defmodule Sqlitex.Statement do
     [table | cols] = String.split(values, ",")
     {table, cols, "INSERT", "NEW"}
   end
+
   defp parse_return_contents(<<"UPDATE ", values::binary>>) do
     [table | cols] = String.split(values, ",")
     {table, cols, "UPDATE", "NEW"}
   end
+
   defp parse_return_contents(<<"DELETE ", values::binary>>) do
     [table | cols] = String.split(values, ",")
     {table, cols, "DELETE", "OLD"}
   end
+
   defp parse_return_contents(_) do
     {:error, :invalid_returning_clause}
   end

@@ -1,7 +1,7 @@
 defmodule Sqlitex.Server do
   @moduledoc """
   Sqlitex.Server provides a GenServer to wrap a sqlitedb.
-  This makes it easy to share a sqlite database between multiple processes without worrying about concurrency issues.
+  This makes it easy to share a SQLite database between multiple processes without worrying about concurrency issues.
   You can also register the process with a name so you can query by name later.
 
   ## Unsupervised Example
@@ -142,10 +142,10 @@ defmodule Sqlitex.Server do
   cached in the Server process. If a subsequent call to `query/3` or `query_rows/3`
   is made with a matching SQL statement, the prepared statement is reused.
 
-  Prepared statements are purged from the cache when the cache exceeds a pre-set
+  Prepared statements are purged from the cache when the cache exceeds a preset
   limit (20 statements by default).
 
-  Returns summary information about the prepared statement
+  Returns summary information about the prepared statement.
   `{:ok, %{columns: [:column1_name, :column2_name,... ], types: [:column1_type, ...]}}`
   on success or `{:error, {:reason_code, 'SQLite message'}}` if the statement
   could not be prepared.

@@ -6,7 +6,7 @@ defmodule Sqlitex.Query do
 
   ## Parameters
 
-  * `db` - A sqlite database.
+  * `db` - A SQLite database.
   * `sql` - The query to run as a string.
   * `opts` - Options to pass into the query.  See below for details.
 
@@ -16,7 +16,7 @@ defmodule Sqlitex.Query do
     to bind as a list.
   * `into` - The collection to put results into.  This defaults to a list.
   * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
-    to `Application.get_env(:sqlitex, :db_timeout)` or `5000`ms if not configured.
+    to `Application.get_env(:sqlitex, :db_timeout)` or `5000` ms if not configured.
 
   ## Returns
   * [results...] on success
@@ -56,7 +56,7 @@ defmodule Sqlitex.Query do
 
   ## Parameters
 
-  * `db` - A sqlite database.
+  * `db` - A SQLite database.
   * `sql` - The query to run as a string.
   * `opts` - Options to pass into the query.  See below for details.
 
@@ -65,7 +65,7 @@ defmodule Sqlitex.Query do
   * `bind` - If your query has parameters in it, you should provide the options
     to bind as a list.
   * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
-    to `Application.get_env(:sqlitex, :db_timeout)` or `5000`ms if not configured.
+    to `Application.get_env(:sqlitex, :db_timeout)` or `5000` ms if not configured.
 
   ## Returns
   * {:ok, %{rows: [[1, 2], [2, 3]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}} on success
