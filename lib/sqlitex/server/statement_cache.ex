@@ -19,7 +19,7 @@ defmodule Sqlitex.Server.StatementCache do
   Given a statement cache and an SQL statement (string), returns a tuple containing
   the updated statement cache and a prepared SQL statement.
 
-  If possible, reuses an existing prepared statement; if not, prepares the statement
+  If possible, reuses an existing prepared statement. If not, prepares the statement
   and adds it to the cache, possibly removing the least-recently used prepared
   statement if the designated cache size limit would be exceeded.
 
@@ -63,6 +63,7 @@ defmodule Sqlitex.Server.StatementCache do
               cached_stmts: Map.drop(cached_stmts, [purge_victim]),
               lru: lru}
   end
+
   defp purge_cache_if_full(cache), do: cache
 
   defp update_cache_for_read(%__MODULE__{lru: lru} = cache, sql) do

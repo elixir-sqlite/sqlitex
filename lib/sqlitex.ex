@@ -8,7 +8,7 @@ defmodule Sqlitex do
   @type sqlite_error :: {:error, {:sqlite_error, charlist}}
 
   @moduledoc """
-  Sqlitex gives you a way to create and query sqlite databases.
+  Sqlitex gives you a way to create and query SQLite databases.
 
   ## Basic Example
 
@@ -30,7 +30,7 @@ defmodule Sqlitex do
   Sqlitex uses the Erlang library [esqlite](https://github.com/mmzeeman/esqlite)
   which accepts a timeout parameter for almost all interactions with the database.
   The default value for this timeout is 5000 ms. Many functions in Sqlitex accept
-  a `:db_timeout` option that is passed on to the esqlite calls and that also defaults
+  a `:db_timeout` option that is passed on to the esqlite calls and also defaults
   to 5000 ms. If required, this default value can be overridden globally with the
   following in your `config.exs`:
 
@@ -78,8 +78,8 @@ defmodule Sqlitex do
   def query_rows!(db, sql, opts \\ []), do: Sqlitex.Query.query_rows!(db, sql, opts)
 
   @doc """
-  Create a new table `name` where `table_opts` are a list of table constraints
-  and `cols` are a keyword list of columns. The following table constraints are
+  Create a new table `name` where `table_opts` is a list of table constraints
+  and `cols` is a keyword list of columns. The following table constraints are
   supported: `:temp` and `:primary_key`. Example:
 
   **[:temp, {:primary_key, [:id]}]**
