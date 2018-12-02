@@ -109,6 +109,11 @@ defmodule Sqlitex.Server do
     {:reply, result, {db, stmt_cache, timeout}}
   end
 
+  def handle_call({:set_update_hook, pid, opts}, _from, {db, stmt_cache, timeout}) do
+    result = Sqlitex.set_update_hook(db, pid, opts)
+    {:reply, result, {db, stmt_cache, timeout}}
+  end
+
   def handle_cast(:stop, {db, stmt_cache, timeout}) do
     {:stop, :normal, {db, stmt_cache, timeout}}
   end
@@ -130,6 +135,10 @@ defmodule Sqlitex.Server do
 
   def query_rows(pid, sql, opts \\ []) do
     GenServer.call(pid, {:query_rows, sql, opts}, timeout(opts))
+  end
+
+  def set_update_hook(server_pid, notification_pid, opts \\ []) do
+    GenServer.call(server_pid, {:set_update_hook, notification_pid, opts}, timeout(opts))
   end
 
   @doc """

@@ -64,6 +64,24 @@ defmodule Sqlitex do
     res
   end
 
+  @doc """
+  Sets a PID to recieve notifications about table updates.
+
+  Messages will come in the shape of:
+  `{action, table, rowid}`
+
+  * `action` -> `:insert | :update | :delete`
+  * `table` -> charlist of the table name. Example: `'posts'`
+  * `rowid` -> internal immutable rowid index of the row. 
+               This is *NOT* the `id` or `primary key` of the row.
+  See the [official docs](https://www.sqlite.org/c3ref/update_hook.html).
+  """
+  @spec set_update_hook(connection, pid, Keyword.t()) :: :ok | {:error, term()}
+  def set_update_hook(db, pid, opts \\ []) do
+    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
+    :esqlite3.set_update_hook(pid, db, timeout)
+  end
+
   @spec exec(connection, string_or_charlist) :: :ok | sqlite_error
   @spec exec(connection, string_or_charlist, Keyword.t) :: :ok | sqlite_error
   def exec(db, sql, opts \\ []) do

@@ -12,6 +12,19 @@ defmodule SqlitexTest do
     {:ok, golf_db: TestDatabase.init(db)}
   end
 
+  test "set_update_hook", %{golf_db: db} do
+    :ok = Sqlitex.set_update_hook(db, self())
+    :ok = Sqlitex.exec(db, "CREATE TABLE test (id INTEGER PRIMARY KEY, val STRING);")
+    :ok = Sqlitex.exec(db, "INSERT INTO test (val) VALUES ('this is a test');")
+    assert_receive {:insert, 'test', 1}
+
+    {:ok, conn} = Sqlitex.Server.start_link(@shared_cache)
+    :ok = Sqlitex.Server.set_update_hook(conn, self())
+    :ok = Sqlitex.Server.exec(conn, "CREATE TABLE blerps (id INTEGER PRIMARY KEY, val STRING);")
+    :ok = Sqlitex.Server.exec(conn, "INSERT INTO blerps (val) VALUES ('this is a test');")
+    assert_receive {:insert, 'blerps', 1}
+  end
+
   test "server basic query" do
     {:ok, conn} = Sqlitex.Server.start_link(@shared_cache)
     {:ok, [row]} = Sqlitex.Server.query(conn, "SELECT * FROM players ORDER BY id LIMIT 1")
