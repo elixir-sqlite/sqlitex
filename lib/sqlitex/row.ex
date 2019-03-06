@@ -51,11 +51,11 @@ defmodule Sqlitex.Row do
     {result, _} = int |> Integer.to_string |> Float.parse
     translate_value({result, type})
   end
-  defp translate_value({float, "decimal"}), do: Decimal.new(float)
+  defp translate_value({float, "decimal"}), do: Decimal.from_float(float)
   defp translate_value({float, "decimal(" <> rest}) do
     [precision, scale] = rest |> string_rstrip(?)) |> String.split(",") |> Enum.map(&(&1 |> String.trim() |> String.to_integer))
     Decimal.with_context %Decimal.Context{precision: precision, rounding: :down}, fn ->
-      float |> Float.round(scale) |> Float.to_string |> Decimal.new |> Decimal.plus
+      float |> Float.round(scale) |> Decimal.from_float |> Decimal.plus
     end
   end
 
