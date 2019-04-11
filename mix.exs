@@ -18,7 +18,7 @@ defmodule Sqlitex.Mixfile do
         "coveralls.html": :test
       ],
       description: """
-        A thin Elixir wrapper around esqlite
+      A thin Elixir wrapper around esqlite
       """,
       dialyzer: [plt_add_deps: :transitive]
     ]
@@ -32,12 +32,12 @@ defmodule Sqlitex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:esqlite, "~> 0.3.0"},
+      {:esqlite, "~> 0.4"},
       {:decimal, "~> 1.7"},
       {:credo, "~> 0.10", only: :dev},
       {:dialyxir, "~> 1.0.0-rc.4", only: :dev, runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:ex_doc, "~> 0.19", only: :docs, runtime: false},
+      {:ex_doc, "~> 0.20", only: :docs, runtime: false},
       {:excheck, "~> 0.6", only: :test},
       {:triq, "~> 1.3", only: :test}
     ]
