@@ -178,7 +178,7 @@ defmodule Sqlitex.Server do
 
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, db_opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), db_opts),
-         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), Keyword.get(opts, :into, [])),
     do: {:ok, rows, new_cache}
   end
 
@@ -187,7 +187,7 @@ defmodule Sqlitex.Server do
 
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, db_opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), db_opts),
-         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), :raw_list),
     do: {:ok,
          %{rows: rows, columns: stmt.column_names, types: stmt.column_types},
          new_cache}
