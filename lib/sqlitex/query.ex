@@ -32,7 +32,7 @@ defmodule Sqlitex.Query do
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql, opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
-         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :into, [])),
+         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), Keyword.get(opts, :into, [])),
     do: {:ok, res}
   end
 
@@ -77,7 +77,7 @@ defmodule Sqlitex.Query do
   def query_rows(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql, opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
-         {:ok, rows} <- Statement.fetch_all(stmt, :raw_list),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), :raw_list),
     do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
   end
 

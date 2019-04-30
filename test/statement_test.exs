@@ -7,7 +7,7 @@ defmodule StatementTest do
 
     result = db
               |> Sqlitex.Statement.prepare!("PRAGMA user_version;")
-              |> Sqlitex.Statement.fetch_all!
+              |> Sqlitex.Statement.fetch_all!(1_000)
 
     assert result == [[user_version: 0]]
   end
@@ -20,7 +20,7 @@ defmodule StatementTest do
     stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES (?1) "
                                           <> ";--RETURNING ON INSERT x,id")
 
-    rows = Sqlitex.Statement.fetch_all!(stmt)
+    rows = Sqlitex.Statement.fetch_all!(stmt, 1_000)
     assert rows == [[id: 1]]
   end
 
@@ -32,7 +32,7 @@ defmodule StatementTest do
     stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES (?1) "
                                           <> ";--RETURNING ON INSERT x,id")
 
-    rows = Sqlitex.Statement.fetch_all!(stmt, :raw_list)
+    rows = Sqlitex.Statement.fetch_all!(stmt, 1_000, :raw_list)
     assert rows == [[1]]
   end
 
@@ -44,7 +44,7 @@ defmodule StatementTest do
     stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES ('x'),('y'),('z') "
                                           <> ";--RETURNING ON INSERT x,id")
 
-    rows = Sqlitex.Statement.fetch_all!(stmt)
+    rows = Sqlitex.Statement.fetch_all!(stmt, 1_000)
     assert rows == [[id: 1], [id: 2], [id: 3]]
   end
 
@@ -56,7 +56,7 @@ defmodule StatementTest do
     stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES ('x'),('y'),('z') "
                                           <> ";--RETURNING ON INSERT x,id")
 
-    rows = Sqlitex.Statement.fetch_all!(stmt, :raw_list)
+    rows = Sqlitex.Statement.fetch_all!(stmt, 1_000, :raw_list)
     assert rows == [[1], [2], [3]]
   end
 
@@ -71,7 +71,7 @@ defmodule StatementTest do
     stmt = Sqlitex.Statement.prepare!(db, "INSERT INTO x(str) VALUES ('x') "
                                           <> ";--RETURNING ON INSERT x,id")
 
-    result = Sqlitex.Statement.fetch_all(stmt, :raw_list)
+    result = Sqlitex.Statement.fetch_all(stmt, 1_000, :raw_list)
     assert result == {:error, {:constraint, 'UNIQUE constraint failed: x.str'}}
   end
 end
