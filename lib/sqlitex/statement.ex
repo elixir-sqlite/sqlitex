@@ -74,6 +74,7 @@ defmodule Sqlitex.Statement do
             column_types: []
 
   @chunk_size 5000
+  @default_timeout 5000
 
   alias Sqlitex.Config
 
@@ -180,7 +181,8 @@ defmodule Sqlitex.Statement do
   * `{:ok, results}`
   * `{:error, error}`
   """
-  def fetch_all(statement, timeout, into \\ []) do
+
+  def fetch_all(statement, timeout \\ @default_timeout, into \\ []) do
     case raw_fetch_all(statement, timeout) do
       {:error, _} = other -> other
       raw_data ->
@@ -200,7 +202,7 @@ defmodule Sqlitex.Statement do
 
   Returns the results otherwise.
   """
-  def fetch_all!(statement, timeout, into \\ []) do
+  def fetch_all!(statement, timeout \\ @default_timeout, into \\ []) do
     case fetch_all(statement, timeout, into) do
       {:ok, results} -> results
       {:error, reason} -> raise Sqlitex.Statement.FetchAllError, reason: reason
