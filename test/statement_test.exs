@@ -74,4 +74,24 @@ defmodule StatementTest do
     result = Sqlitex.Statement.fetch_all(stmt, 1_000, :raw_list)
     assert result == {:error, {:constraint, 'UNIQUE constraint failed: x.str'}}
   end
+
+  test "custom query timeouts are passed through to esqlite" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    {:error, reason, _} = catch_throw(
+      db
+      |> Sqlitex.Statement.prepare!("""
+        WITH RECURSIVE r(i) AS (
+          VALUES(0)
+          UNION ALL
+          SELECT i FROM r
+          LIMIT 1000000
+        )
+        SELECT i FROM r WHERE i = 1
+      """)
+      |> Sqlitex.Statement.fetch_all!(1)
+    )
+
+    assert reason == :timeout
+  end
 end
