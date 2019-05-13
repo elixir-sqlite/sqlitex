@@ -4,11 +4,11 @@ defmodule Sqlitex.Mixfile do
   def project do
     [
       app: :sqlitex,
-      version: "1.6.0",
+      version: "1.7.0",
       elixir: "~> 1.4",
       deps: deps(),
       package: package(),
-      source_url: "https://github.com/Sqlite-Ecto/sqlitex",
+      source_url: "https://github.com/elixir-sqlite/sqlitex",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -47,7 +47,7 @@ defmodule Sqlitex.Mixfile do
     [
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/Sqlite-Ecto/sqlitex",
+        "GitHub" => "https://github.com/elixir-sqlite/sqlitex",
         "docs" => "http://hexdocs.pm/sqlitex"
       }
     ]
