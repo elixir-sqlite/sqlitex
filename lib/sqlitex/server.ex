@@ -45,9 +45,9 @@ defmodule Sqlitex.Server do
 
   use GenServer
 
-  alias Sqlitex.Statement
-  alias Sqlitex.Server.StatementCache, as: Cache
   alias Sqlitex.Config
+  alias Sqlitex.Server.StatementCache, as: Cache
+  alias Sqlitex.Statement
 
   @doc """
   Starts a SQLite Server (GenServer) instance.

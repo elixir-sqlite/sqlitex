@@ -2,7 +2,7 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: circleci/elixir:1.7.3
+      - image: circleci/elixir:1.8.1
     environment:
       MIX_ENV: test
     steps:
@@ -15,8 +15,7 @@ jobs:
       - run: mix deps.get
       - run: mix deps.compile
       - run: mix compile
-      # not passing yet
-      # - run: mix credo --strict
+      - run: mix credo --strict
       - run: mix coveralls.circle
       - save_cache:
           key: v2-dependency-cache-{{ checksum "mix.lock" }}
