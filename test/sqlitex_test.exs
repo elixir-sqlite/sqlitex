@@ -28,14 +28,14 @@ defmodule SqlitexTest do
   test "server basic query" do
     {:ok, conn} = Sqlitex.Server.start_link(@shared_cache)
     {:ok, [row]} = Sqlitex.Server.query(conn, "SELECT * FROM players ORDER BY id LIMIT 1")
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
     Sqlitex.Server.stop(conn)
   end
 
   test "server basic query by name" do
     {:ok, _} = Sqlitex.Server.start_link(@shared_cache, name: :sql)
     {:ok, [row]} = Sqlitex.Server.query(:sql, "SELECT * FROM players ORDER BY id LIMIT 1")
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
     Sqlitex.Server.stop(:sql)
   end
 
@@ -46,12 +46,12 @@ defmodule SqlitexTest do
 
   test "a basic query returns a list of keyword lists", context do
     {:ok, [row]} = Sqlitex.query(context[:golf_db], "SELECT * FROM players ORDER BY id LIMIT 1")
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
   end
 
   test "a basic query returns a list of maps when into: %{} is given", context do
     {:ok, [row]} = Sqlitex.query(context[:golf_db], "SELECT * FROM players ORDER BY id LIMIT 1", into: %{})
-    assert row == %{id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil}
+    assert row == %{id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil}
   end
 
   test "with_db" do
@@ -59,7 +59,7 @@ defmodule SqlitexTest do
       Sqlitex.query(db, "SELECT * FROM players ORDER BY id LIMIT 1")
     end)
 
-    assert row == [id: 1, name: "Mikey", created_at: {{2012,10,14},{05,46,28,318_107}}, updated_at: {{2013,09,06},{22,29,36,610_911}}, type: nil]
+    assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
   end
 
   test "table creation works as expected" do
