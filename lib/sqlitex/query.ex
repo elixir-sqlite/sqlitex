@@ -1,4 +1,11 @@
 defmodule Sqlitex.Query do
+  @moduledoc """
+  Functions for running queries against a SQLite database.
+
+  These query functions handle details such as preparing a statement, binding values, etc.
+  If you need to deal with these details on your own, please take a look at the `Sqlitex.Statement` module.
+  """
+
   alias Sqlitex.Statement
 
   @doc """
@@ -19,7 +26,7 @@ defmodule Sqlitex.Query do
     to `Application.get_env(:sqlitex, :db_timeout)` or `5000` ms if not configured.
 
   ## Returns
-  * [results...] on success
+  * {:ok, [results...]} on success
   * {:error, _} on failure.
   """
 

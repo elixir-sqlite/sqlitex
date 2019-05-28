@@ -72,7 +72,7 @@ defmodule Sqlitex do
 
   * `action` -> `:insert | :update | :delete`
   * `table` -> charlist of the table name. Example: `'posts'`
-  * `rowid` -> internal immutable rowid index of the row. 
+  * `rowid` -> internal immutable rowid index of the row.
                This is *NOT* the `id` or `primary key` of the row.
   See the [official docs](https://www.sqlite.org/c3ref/update_hook.html).
   """
@@ -82,6 +82,13 @@ defmodule Sqlitex do
     :esqlite3.set_update_hook(pid, db, timeout)
   end
 
+  @doc """
+  Send a raw SQL statement to the database
+
+  This function is intended for running fully-complete SQL statements.
+  No query preparation, or binding of values takes place.
+  This is generally useful for things like re-playing a SQL export back into the database.
+  """
   @spec exec(connection, string_or_charlist) :: :ok | sqlite_error
   @spec exec(connection, string_or_charlist, Keyword.t) :: :ok | sqlite_error
   def exec(db, sql, opts \\ []) do
@@ -89,10 +96,24 @@ defmodule Sqlitex do
     :esqlite3.exec(sql, db, timeout)
   end
 
+  @doc "A shortcut to `Sqlitex.Query.query/3`"
+  @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
   def query(db, sql, opts \\ []), do: Sqlitex.Query.query(db, sql, opts)
+
+  @doc "A shortcut to `Sqlitex.Query.query!/3`"
+  @spec query!(Sqlitex.connection, String.t | charlist) :: [[]]
+  @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t, db_timeout: integer()]) :: [Enum.t]
   def query!(db, sql, opts \\ []), do: Sqlitex.Query.query!(db, sql, opts)
 
+  @doc "A shortcut to `Sqlitex.Query.query_rows/3`"
+  @spec query_rows(Sqlitex.connection, String.t | charlist) :: {:ok, %{}} | Sqlitex.sqlite_error
+  @spec query_rows(Sqlitex.connection, String.t | charlist, [bind: [], db_timeout: integer()]) :: {:ok, %{}} | Sqlitex.sqlite_error
   def query_rows(db, sql, opts \\ []), do: Sqlitex.Query.query_rows(db, sql, opts)
+
+  @doc "A shortcut to `Sqlitex.Query.query_rows!/3`"
+  @spec query_rows!(Sqlitex.connection, String.t | charlist) :: %{}
+  @spec query_rows!(Sqlitex.connection, String.t | charlist, [bind: [], db_timeout: integer()]) :: %{}
   def query_rows!(db, sql, opts \\ []), do: Sqlitex.Query.query_rows!(db, sql, opts)
 
   @doc """

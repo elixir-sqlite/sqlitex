@@ -20,8 +20,9 @@ defmodule Sqlitex.Mixfile do
       description: """
       A thin Elixir wrapper around esqlite
       """,
-      dialyzer: [plt_add_deps: :transitive]
-    ]
+      dialyzer: [plt_add_deps: :transitive],
+      docs: [main: "readme", # The main page in the docs
+             extras: ["README.md"]]]
   end
 
   # Configuration for the OTP application
