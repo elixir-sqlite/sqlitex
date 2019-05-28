@@ -23,14 +23,14 @@ defmodule Sqlitex.SqlBuilder do
   defp table_opt(:temp), do: {:temp, "TEMP"}
   defp table_opt({:primary_key, cols}) when is_list(cols) do
     {
-      :primary_key, ",PRIMARY KEY ("
+      :primary_key, ", PRIMARY KEY ("
       # Also quote the columns in a PRIMARY KEY list
-      <> (cols |> Enum.map(&(~s("#{&1}"))) |> Enum.join(","))
+      <> (cols |> Enum.map(&(~s("#{&1}"))) |> Enum.join(", "))
       <> ")"
     }
   end
   defp table_opt({:primary_key, col}) when is_atom(col) do
-    {:primary_key, ",PRIMARY KEY (\"" <> Atom.to_string(col) <> "\")"}
+    {:primary_key, ", PRIMARY KEY (\"" <> Atom.to_string(col) <> "\")"}
   end
 
   # Supported column options
