@@ -48,7 +48,6 @@ jobs:
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix do deps.get, compile
-      - run: mix format --check-formatted
       - run: mix dialyzer --halt-exit-status
       - run: mix credo --strict
       - run: mix coveralls.circle
