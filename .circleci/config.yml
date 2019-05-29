@@ -29,6 +29,36 @@ jobs:
           - "_build"
           - "~/.mix"
       - run: mix test
+
+  lint:
+    parameters:
+      version:
+        description: Elixir Version
+        type: string
+        default: *default_version
+    parallelism: 1
+    docker:
+      - image: elixir:<< parameters.version >>
+    working_directory: ~/app
+    steps:
+      - checkout  # check out source code to working directory
+      - restore_cache:
+          keys:
+            - lint-<<parameters.version>>-{{ checksum "mix.lock" }}
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix do deps.get, compile
+      - run: mix format --check-formatted
+      - run: mix dialyzer --halt-exit-status
+      - run: mix credo --strict
+      - run: mix coveralls.circle
+      - save_cache:
+          key: lint-<<parameters.version>>-{{ checksum "mix.lock" }}
+          paths:
+          - "deps"
+          - "_build"
+          - "~/.mix"
+
 workflows:
   version: 2.1
   testing_all_versions:
@@ -48,3 +78,5 @@ workflows:
       - build:
           name: "Test Elixir 1.4.5"
           version: 1.4.5
+      - lint:
+          name: "Check Formatting, Types and Coverage"
