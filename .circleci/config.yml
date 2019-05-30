@@ -1,24 +1,81 @@
-version: 2.0
+version: 2.1
+
+default_version: &default_version 1.8.1
+
 jobs:
   build:
+    parameters:
+      version:
+        description: Elixir Version
+        type: string
+        default: *default_version
+    parallelism: 1
     docker:
-      - image: circleci/elixir:1.8.1
-    environment:
-      MIX_ENV: test
+      - image: elixir:<< parameters.version >>
+    working_directory: ~/app
+
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v2-dependency-cache-{{ checksum "mix.lock" }}
+            - build-<<parameters.version>>
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: mix deps.compile
-      - run: mix compile
+      - run: mix do deps.get, compile
+      - save_cache:
+          key: build-<<parameters.version>>
+          paths:
+          - "deps"
+          - "_build"
+          - "~/.mix"
+      - run: mix test
+
+  lint:
+    parameters:
+      version:
+        description: Elixir Version
+        type: string
+        default: *default_version
+    parallelism: 1
+    docker:
+      - image: elixir:<< parameters.version >>
+    working_directory: ~/app
+    steps:
+      - checkout  # check out source code to working directory
+      - restore_cache:
+          keys:
+            - lint-<<parameters.version>>-{{ checksum "mix.lock" }}
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix do deps.get, compile
+      - run: mix dialyzer --halt-exit-status
       - run: mix credo --strict
       - run: mix coveralls.circle
       - save_cache:
-          key: v2-dependency-cache-{{ checksum "mix.lock" }}
+          key: lint-<<parameters.version>>-{{ checksum "mix.lock" }}
           paths:
-            - _build
-            - deps
+          - "deps"
+          - "_build"
+          - "~/.mix"
+
+workflows:
+  version: 2.1
+  testing_all_versions:
+    jobs:
+      - build:
+          name: "Test Elixir 1.8.1"
+          version: 1.8.1
+      - build:
+          name: "Test Elixir 1.7.4"
+          version: 1.7.4
+      - build:
+          name: "Test Elixir 1.6.6"
+          version: 1.6.6
+      - build:
+          name: "Test Elixir 1.5.3"
+          version: 1.5.3
+      - build:
+          name: "Test Elixir 1.4.5"
+          version: 1.4.5
+      - lint:
+          name: "Check Formatting, Types and Coverage"
