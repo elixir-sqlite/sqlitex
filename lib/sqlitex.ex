@@ -138,9 +138,33 @@ defmodule Sqlitex do
     exec(db, stmt, call_opts)
   end
 
+  @spec with_transaction(Sqlitex.connection, (Sqlitex.connection -> any()), Keyword.t) :: any
+  def with_transaction(db, fun, opts \\ []) do
+    with :ok <- exec(db, "begin", opts),
+      {:ok, result} <- apply_rescueing(fun, [db]),
+      :ok <- exec(db, "commit", opts)
+    do
+      {:ok, result}
+    else
+      err ->
+        :ok = exec(db, "rollback")
+        err
+    end
+  end
+
  if Version.compare(System.version, "1.3.0") == :lt do
    defp string_to_charlist(string), do: String.to_char_list(string)
  else
    defp string_to_charlist(string), do: String.to_charlist(string)
  end
+
+ ## Private Helpers
+
+ defp apply_rescueing(fun, args) do
+    try do
+      {:ok, apply(fun, args)}
+    rescue
+      error -> {:error, error}
+    end
+  end
 end

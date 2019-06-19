@@ -243,4 +243,31 @@ defmodule SqlitexTest do
     assert row[:b] == nil
     assert row[:c] == nil
   end
+
+  test "with_transaction commit" do
+    {:ok, db} = Sqlitex.open(":memory:")
+    :ok = Sqlitex.exec(db, "create table foo(id integer)")
+
+    Sqlitex.with_transaction(db, fn db ->
+      :ok = Sqlitex.exec(db, "insert into foo (id) values (42)")
+    end)
+
+    assert Sqlitex.query(db, "select * from foo") == {:ok, [[{:id, 42}]]}
+  end
+
+  test "with_transaction rollback" do
+    {:ok, db} = Sqlitex.open(':memory:')
+    :ok = Sqlitex.exec(db, "create table foo(id integer)")
+
+    try do
+      Sqlitex.with_transaction(db, fn db ->
+        :ok = Sqlitex.exec(db, "insert into foo (id) values (42)")
+        raise "Error to roll back transaction"
+      end)
+    rescue
+      _ -> nil
+    end
+
+    assert Sqlitex.query(db, "select * from foo") == {:ok, []}
+  end
 end

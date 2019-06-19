@@ -115,16 +115,8 @@ defmodule Sqlitex.Server do
   end
 
   def handle_call({:with_transaction, fun}, _from, {db, stmt_cache, timeout}) do
-    with :ok <- Sqlitex.exec(db, "begin"),
-          {:ok, result} <- apply_rescueing(fun, [db]),
-          :ok <- Sqlitex.exec(db, "commit")
-    do
-      {:reply, result, {db, stmt_cache, timeout}}
-    else
-      err ->
-        :ok = Sqlitex.exec(db, "rollback")
-        {:reply, err, {db, stmt_cache, timeout}}
-    end
+    result = Sqlitex.with_transaction(db, fun)
+    {:reply, result, {db, stmt_cache, timeout}}
   end
 
   def handle_cast(:stop, {db, stmt_cache, timeout}) do
@@ -189,20 +181,13 @@ defmodule Sqlitex.Server do
     Runs `fun` inside a transaction. If `fun` returns without raising an exception,
     the transaction will be commited via `commit`. Otherwise, `rollback` will be called.
 
-    Statements are executed in the server process and are guaranteed to get executed
-    sequentially without any interleaved statements from other processes.
-
-    It's important to use `Sqlitex.exec`, `Sqlitex.query`, ... instead of
-    `Sqlitex.Server.exec`, ... inside the transaction as the `db` arg to `fun` is of
-    type `Sqlitex.connection`.
-
     ## Examples
-      iex> {:ok, s} = Sqlitex.Server.start_link(':memory:')
-      iex> Sqlitex.Server.with_transaction(s, fn(db) ->
+      iex> {:ok, db} = Sqlitex.open(":memory:")
+      iex> Sqlitex.with_transaction(db, fn(db) ->
       ...>   Sqlitex.exec(db, "create table foo(id integer)")
       ...>   Sqlitex.exec(db, "insert into foo (id) values(42)")
       ...> end)
-      iex> Sqlitex.Server.query(s, "select * from foo")
+      iex> Sqlitex.query(db, "select * from foo")
       {:ok, [[{:id, 42}]]}
   """
   @spec with_transaction(pid(), (Sqlitex.connection -> any()), Keyword.t) :: any
@@ -238,12 +223,4 @@ defmodule Sqlitex.Server do
   end
 
   defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
-
-  defp apply_rescueing(fun, args) do
-    try do
-      {:ok, apply(fun, args)}
-    rescue
-      error -> {:error, error}
-    end
-  end
 end
