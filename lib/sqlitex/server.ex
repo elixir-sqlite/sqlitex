@@ -176,7 +176,6 @@ defmodule Sqlitex.Server do
     GenServer.cast(pid, :stop)
   end
 
-
   @doc """
     Runs `fun` inside a transaction. If `fun` returns without raising an exception,
     the transaction will be commited via `commit`. Otherwise, `rollback` will be called.
