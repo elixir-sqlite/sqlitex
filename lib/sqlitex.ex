@@ -153,7 +153,7 @@ defmodule Sqlitex do
   @spec with_transaction(Sqlitex.connection, (Sqlitex.connection -> any()), Keyword.t) :: any
   def with_transaction(db, fun, opts \\ []) do
     with :ok <- exec(db, "begin", opts),
-      {:ok, result} <- apply_rescueing(fun, [db]),
+      {:ok, result} <- apply_rescuing(fun, [db]),
       :ok <- exec(db, "commit", opts)
     do
       {:ok, result}
@@ -172,7 +172,7 @@ defmodule Sqlitex do
 
  ## Private Helpers
 
- defp apply_rescueing(fun, args) do
+ defp apply_rescuing(fun, args) do
     try do
       {:ok, apply(fun, args)}
     rescue
