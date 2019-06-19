@@ -119,6 +119,19 @@ defmodule Sqlitex.Server do
     {:reply, result, {db, stmt_cache, config}}
   end
 
+  def handle_call({:with_transaction, fun}, _from, {db, stmt_cache, timeout}) do
+    with :ok <- Sqlitex.exec(db, "begin"),
+          {:ok, result} <- apply_rescueing(fun, [db]),
+          :ok <- Sqlitex.exec(db, "commit")
+    do
+      {:reply, result, {db, stmt_cache, timeout}}
+    else
+      err ->
+        :ok = Sqlitex.exec(db, "rollback")
+        {:reply, err, {db, stmt_cache, timeout}}
+    end
+  end
+
   def handle_cast(:stop, {db, stmt_cache, config}) do
     {:stop, :normal, {db, stmt_cache, config}}
   end
@@ -191,6 +204,32 @@ defmodule Sqlitex.Server do
     GenServer.cast(pid, :stop)
   end
 
+
+  @doc """
+    Runs `fun` inside a transaction. If `fun` returns without raising an exception,
+    the transaction will be commited via `commit`. Otherwise, `rollback` will be called.
+
+    Statements are executed in the server process and are guaranteed to get executed
+    sequentially without any interleaved statements from other processes.
+
+    It's important to use `Sqlitex.exec`, `Sqlitex.query`, ... instead of
+    `Sqlitex.Server.exec`, ... inside the transaction as the `db` arg to `fun` is of
+    type `Sqlitex.connection`.
+
+    ## Examples
+      iex> {:ok, s} = Sqlitex.Server.start_link(':memory:')
+      iex> Sqlitex.Server.with_transaction(s, fn(db) ->
+      ...>   Sqlitex.exec(db, "create table foo(id integer)")
+      ...>   Sqlitex.exec(db, "insert into foo (id) values(42)")
+      ...> end)
+      iex> Sqlitex.Server.query(s, "select * from foo")
+      {:ok, [[{:id, 42}]]}
+  """
+  @spec with_transaction(pid(), (Sqlitex.connection -> any()), Keyword.t) :: any
+  def with_transaction(pid, fun, opts \\ []) do
+    GenServer.call(pid, {:with_transaction, fun}, timeout(opts))
+  end
+
   ## Helpers
 
   defp query_impl(sql, stmt_cache, opts) do
@@ -212,5 +251,15 @@ defmodule Sqlitex.Server do
   defp prepare_impl(sql, stmt_cache, opts) do
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
     do: {:ok, %{columns: stmt.column_names, types: stmt.column_types}, new_cache}
+  end
+
+  defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
+
+  defp apply_rescueing(fun, args) do
+    try do
+      {:ok, apply(fun, args)}
+    rescue
+      error -> {:error, error}
+    end
   end
 end
