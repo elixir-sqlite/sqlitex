@@ -180,13 +180,16 @@ defmodule Sqlitex.Server do
     Runs `fun` inside a transaction. If `fun` returns without raising an exception,
     the transaction will be commited via `commit`. Otherwise, `rollback` will be called.
 
+    Be careful if `fun` might take a long time to run. The function is executed in the
+    context of the server and therefore blocks other requests until it's finished.
+
     ## Examples
-      iex> {:ok, db} = Sqlitex.open(":memory:")
-      iex> Sqlitex.with_transaction(db, fn(db) ->
+      iex> {:ok, server} = Sqlitex.Server.start_link(":memory:")
+      iex> Sqlitex.Server.with_transaction(server, fn(db) ->
       ...>   Sqlitex.exec(db, "create table foo(id integer)")
       ...>   Sqlitex.exec(db, "insert into foo (id) values(42)")
       ...> end)
-      iex> Sqlitex.query(db, "select * from foo")
+      iex> Sqlitex.Server.query(server, "select * from foo")
       {:ok, [[{:id, 42}]]}
   """
   @spec with_transaction(pid(), (Sqlitex.connection -> any()), Keyword.t) :: any
