@@ -150,6 +150,19 @@ defmodule Sqlitex do
     exec(db, stmt, call_opts)
   end
 
+  @doc """
+    Runs `fun` inside a transaction. If `fun` returns without raising an exception,
+    the transaction will be commited via `commit`. Otherwise, `rollback` will be called.
+
+    ## Examples
+      iex> {:ok, db} = Sqlitex.open(":memory:")
+      iex> Sqlitex.with_transaction(db, fn(db) ->
+      ...>   Sqlitex.exec(db, "create table foo(id integer)")
+      ...>   Sqlitex.exec(db, "insert into foo (id) values(42)")
+      ...> end)
+      iex> Sqlitex.query(db, "select * from foo")
+      {:ok, [[{:id, 42}]]}
+  """
   @spec with_transaction(Sqlitex.connection, (Sqlitex.connection -> any()), Keyword.t) :: any
   def with_transaction(db, fun, opts \\ []) do
     with :ok <- exec(db, "begin", opts),
