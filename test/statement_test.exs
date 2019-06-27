@@ -104,4 +104,73 @@ defmodule Sqlitex.StatementTest do
 
     assert reason == :timeout
   end
+
+  test "prepare! raise" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    assert_raise Sqlitex.Statement.PrepareError, fn ->
+      Sqlitex.Statement.prepare!(db, "SELECT * FROMMMM TABLE;")
+    end
+  end
+
+  test "build_values error" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    :ok = Sqlitex.exec(db, "CREATE TABLE bv (id INTEGER PRIMARY KEY);")
+
+    result = db
+              |> Sqlitex.Statement.prepare!("SELECT * FROM bv")
+              |> Sqlitex.Statement.bind_values([1])
+
+    assert result == {:error, :args_wrong_length}
+  end
+
+  test "build_values! ok" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    :ok = Sqlitex.exec(db, "CREATE TABLE bv (id INTEGER PRIMARY KEY);")
+
+    assert {:ok, _stmt} = db
+              |> Sqlitex.Statement.prepare!("SELECT * FROM bv WHERE id = ?1")
+              |> Sqlitex.Statement.bind_values([1])
+  end
+
+  test "build_values! raise" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    :ok = Sqlitex.exec(db, "CREATE TABLE bv (id INTEGER PRIMARY KEY);")
+
+    assert_raise Sqlitex.Statement.BindValuesError, fn ->
+      db
+      |> Sqlitex.Statement.prepare!("SELECT * FROM bv")
+      |> Sqlitex.Statement.bind_values!([1])
+    end
+  end
+
+  test "fetch_all! raise" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    :ok = Sqlitex.exec(db, "CREATE TABLE bv (id INTEGER PRIMARY KEY);")
+    :ok = Sqlitex.exec(db, "BEGIN TRANSACTION;")
+
+    assert_raise Sqlitex.Statement.FetchAllError, fn ->
+      db
+      |> Sqlitex.Statement.prepare!("BEGIN TRANSACTION;")
+      |> Sqlitex.Statement.fetch_all!(db_timeout: 1_000)
+    end
+  end
+
+  test "exec! raise" do
+    {:ok, db} = Sqlitex.open(":memory:")
+
+    :ok = Sqlitex.exec(db, "CREATE TABLE bv (id INTEGER PRIMARY KEY);")
+    :ok = Sqlitex.exec(db, "BEGIN TRANSACTION;")
+
+    assert_raise Sqlitex.Statement.ExecError, fn ->
+      db
+      |> Sqlitex.Statement.prepare!("BEGIN TRANSACTION;")
+      |> Sqlitex.Statement.exec!(db_timeout: 1_000)
+    end
+  end
+
 end
