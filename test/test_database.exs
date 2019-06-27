@@ -1,4 +1,4 @@
-defmodule TestDatabase do
+defmodule Sqlitex.TestDatabase do
 
   # Functions for initializing an in-memory golf database
 

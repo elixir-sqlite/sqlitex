@@ -21,7 +21,7 @@ defmodule Sqlitex.Statement do
   iex(6)> Sqlitex.Statement.exec(statement)
   :ok
   iex(7)> {:ok, statement} = Sqlitex.Statement.prepare(db, "SELECT * FROM data;")
-  iex(8)> Sqlitex.Statement.fetch_all(statement, 1_000)
+  iex(8)> Sqlitex.Statement.fetch_all(statement, db_timeout: 1_000)
   {:ok, [[id: 1, name: "hello"]]}
   iex(9)> Sqlitex.close(db)
   :ok
@@ -73,9 +73,6 @@ defmodule Sqlitex.Statement do
             column_names: [],
             column_types: []
 
-  @chunk_size 5000
-  @default_timeout 5000
-
   alias Sqlitex.Config
 
   @doc """
@@ -96,7 +93,7 @@ defmodule Sqlitex.Statement do
   * See `:esqlite3.prepare` for errors.
   """
   def prepare(db, sql, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
+    timeout = Config.db_timeout(opts)
 
     with {:ok, stmt} <- do_prepare(db, sql, timeout),
          {:ok, stmt} <- get_column_names(stmt, timeout),
@@ -145,9 +142,7 @@ defmodule Sqlitex.Statement do
   * `%Decimal` -  Converted into a number.
   """
   def bind_values(statement, values, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-
-    case :esqlite3.bind(statement.statement, translate_bindings(values), timeout) do
+    case :esqlite3.bind(statement.statement, translate_bindings(values), Config.db_timeout(opts)) do
       {:error, _} = error -> error
       :ok -> {:ok, statement}
     end
@@ -173,7 +168,11 @@ defmodule Sqlitex.Statement do
   ## Parameters
 
   * `statement` - The statement to run.
-  * `timeout` - The query timeout to be passed to esqlite.
+
+  Also accepts the following keyword options:
+
+  * `db_timeout` - The time in ms allowed for the statement to run. Defaults to 5000, or the :db_timeout value in Application env.
+  * `db_chunk_size` - The internal bulk size. Defaults to 5000, or the :db_chunk_size value in Application env.
   * `into` - The collection to put the results into. Defaults to an empty list.
 
   ## Returns
@@ -181,20 +180,20 @@ defmodule Sqlitex.Statement do
   * `{:ok, results}`
   * `{:error, error}`
   """
-
-  def fetch_all(statement, timeout \\ @default_timeout, into \\ []) do
-    case raw_fetch_all(statement, timeout) do
+  def fetch_all(statement, opts \\ []) do
+    case raw_fetch_all(statement, opts) do
       {:error, _} = other -> other
       raw_data ->
+        into = Keyword.get(opts, :into, [])
         {:ok, Row.from(statement.column_types, statement.column_names, raw_data, into)}
     end
   end
 
-  defp raw_fetch_all(%__MODULE__{returning: nil, statement: statement}, timeout) do
-    :esqlite3.fetchall(statement, @chunk_size, timeout)
+  defp raw_fetch_all(%__MODULE__{returning: nil, statement: statement}, opts) do
+    :esqlite3.fetchall(statement, Config.db_chunk_size(opts), Config.db_timeout(opts))
   end
-  defp raw_fetch_all(statement, timeout) do
-    returning_query(statement, timeout)
+  defp raw_fetch_all(statement, opts) do
+    returning_query(statement, opts)
   end
 
   @doc """
@@ -202,8 +201,8 @@ defmodule Sqlitex.Statement do
 
   Returns the results otherwise.
   """
-  def fetch_all!(statement, timeout \\ @default_timeout, into \\ []) do
-    case fetch_all(statement, timeout, into) do
+  def fetch_all!(statement, opts) do
+    case fetch_all(statement, opts) do
       {:ok, results} -> results
       {:error, reason} -> raise Sqlitex.Statement.FetchAllError, reason: reason
     end
@@ -228,9 +227,7 @@ defmodule Sqlitex.Statement do
   * `{:error, error}`
   """
   def exec(statement, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-
-    case :esqlite3.step(statement.statement, timeout) do
+    case :esqlite3.step(statement.statement, Config.db_timeout(opts)) do
       # esqlite3.step returns some odd values, so let's translate them:
       :"$done" -> :ok
       :"$busy" -> {:error, {:busy, "Sqlite database is busy"}}
@@ -343,11 +340,11 @@ defmodule Sqlitex.Statement do
     {:error, :invalid_returning_clause}
   end
 
-  defp returning_query(%__MODULE__{database: db} = stmt, timeout) do
+  defp returning_query(%__MODULE__{database: db} = stmt, opts) do
     sp = "sp_#{random_id()}"
     {:ok, _} = db_exec(db, "SAVEPOINT #{sp}")
 
-    case returning_query_in_savepoint(sp, stmt, timeout) do
+    case returning_query_in_savepoint(sp, stmt, opts) do
       {:error, _} = error ->
         rollback(db, sp)
         error
@@ -359,7 +356,7 @@ defmodule Sqlitex.Statement do
 
   defp returning_query_in_savepoint(sp, %__MODULE__{database: db,
                                                     statement: statement,
-                                                    returning: {table, cols, cmd, ref}}, timeout)
+                                                    returning: {table, cols, cmd, ref}}, opts)
   do
     temp_table = "t_#{random_id()}"
     temp_fields = Enum.join(cols, ", ")
@@ -376,7 +373,7 @@ defmodule Sqlitex.Statement do
 
     with {:ok, _} = db_exec(db, "CREATE TEMP TABLE #{temp_table} (#{temp_fields})"),
          {:ok, _} = db_exec(db, trigger),
-         result = :esqlite3.fetchall(statement, @chunk_size, timeout),
+         result = :esqlite3.fetchall(statement, Config.db_chunk_size(opts), Config.db_timeout(opts)),
          {:ok, rows} = db_exec(db, "SELECT #{column_names} FROM #{temp_table}"),
          {:ok, _} = db_exec(db, "DROP TRIGGER IF EXISTS #{trigger_name}"),
          {:ok, _} = db_exec(db, "DROP TABLE IF EXISTS #{temp_table}")

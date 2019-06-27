@@ -58,87 +58,107 @@ defmodule Sqlitex.Server do
   - `stmt_cache_size: (positive_integer)` to override the default limit (20) of statements
     that are cached when calling `prepare/3`.
   - `db_timeout: (positive_integer)` to override `:esqlite3`'s default timeout of 5000 ms for
-    interactions with the database. This can also be set in `config.exs` as
-    `config :sqlitex, db_timeout: 5_000`.
+    interactions with the database. This can also be set in `config.exs` as `config :sqlitex, db_timeout: 5_000`.
+  - `db_chunk_size: (positive_integer)` to override `:esqlite3`'s default chunk_size of 5000 rows
+    to read from native sqlite and send to erlang process in one bulk.
+    This can also be set in `config.exs` as `config :sqlitex, db_chunk_size: 5_000`.
   """
   def start_link(db_path, opts \\ []) do
     stmt_cache_size = Keyword.get(opts, :stmt_cache_size, 20)
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-    GenServer.start_link(__MODULE__, {db_path, stmt_cache_size, timeout}, opts)
+    config = [
+      db_timeout: Config.db_timeout(opts),
+      db_chunk_size: Config.db_chunk_size(opts)
+    ]
+    GenServer.start_link(__MODULE__, {db_path, stmt_cache_size, config}, opts)
   end
 
   ## GenServer callbacks
 
-  def init({db_path, stmt_cache_size, timeout})
+  def init({db_path, stmt_cache_size, config})
     when is_integer(stmt_cache_size) and stmt_cache_size > 0
   do
-    case Sqlitex.open(db_path, [db_timeout: timeout]) do
-      {:ok, db} -> {:ok, {db, __MODULE__.StatementCache.new(db, stmt_cache_size), timeout}}
+    case Sqlitex.open(db_path, config) do
+      {:ok, db} -> {:ok, {db, __MODULE__.StatementCache.new(db, stmt_cache_size), config}}
       {:error, reason} -> {:stop, reason}
     end
   end
 
-  def handle_call({:exec, sql}, _from, {db, stmt_cache, timeout}) do
-    result = Sqlitex.exec(db, sql, [db_timeout: timeout])
-    {:reply, result, {db, stmt_cache, timeout}}
+  def handle_call({:exec, sql}, _from, {db, stmt_cache, config}) do
+    result = Sqlitex.exec(db, sql, config)
+    {:reply, result, {db, stmt_cache, config}}
   end
 
-  def handle_call({:query, sql, opts}, _from, {db, stmt_cache, timeout}) do
-    case query_impl(sql, opts, stmt_cache, timeout) do
-      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, timeout}}
-      err -> {:reply, err, {db, stmt_cache, timeout}}
+  def handle_call({:query, sql, opts}, _from, {db, stmt_cache, config}) do
+    case query_impl(sql, stmt_cache, Keyword.merge(config, opts)) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, config}}
+      err -> {:reply, err, {db, stmt_cache, config}}
     end
   end
 
-  def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache, timeout}) do
-    case query_rows_impl(sql, opts, stmt_cache, timeout) do
-      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, timeout}}
-      err -> {:reply, err, {db, stmt_cache, timeout}}
+  def handle_call({:query_rows, sql, opts}, _from, {db, stmt_cache, config}) do
+    case query_rows_impl(sql, stmt_cache, Keyword.merge(config, opts)) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, config}}
+      err -> {:reply, err, {db, stmt_cache, config}}
     end
   end
 
-  def handle_call({:prepare, sql}, _from, {db, stmt_cache, timeout}) do
-    case prepare_impl(sql, stmt_cache, timeout) do
-      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, timeout}}
-      err -> {:reply, err, {db, stmt_cache, timeout}}
+  def handle_call({:prepare, sql}, _from, {db, stmt_cache, config}) do
+    case prepare_impl(sql, stmt_cache, config) do
+      {:ok, result, new_cache} -> {:reply, {:ok, result}, {db, new_cache, config}}
+      err -> {:reply, err, {db, stmt_cache, config}}
     end
   end
 
-  def handle_call({:create_table, name, table_opts, cols}, _from, {db, stmt_cache, timeout}) do
-    result = Sqlitex.create_table(db, name, table_opts, cols, [db_timeout: timeout])
-    {:reply, result, {db, stmt_cache, timeout}}
+  def handle_call({:create_table, name, table_opts, cols}, _from, {db, stmt_cache, config}) do
+    result = Sqlitex.create_table(db, name, table_opts, cols, config)
+    {:reply, result, {db, stmt_cache, config}}
   end
 
-  def handle_call({:set_update_hook, pid, opts}, _from, {db, stmt_cache, timeout}) do
-    result = Sqlitex.set_update_hook(db, pid, opts)
-    {:reply, result, {db, stmt_cache, timeout}}
+  def handle_call({:set_update_hook, pid, opts}, _from, {db, stmt_cache, config}) do
+    result = Sqlitex.set_update_hook(db, pid, Keyword.merge(config, opts))
+    {:reply, result, {db, stmt_cache, config}}
   end
 
-  def handle_cast(:stop, {db, stmt_cache, timeout}) do
-    {:stop, :normal, {db, stmt_cache, timeout}}
+  def handle_cast(:stop, {db, stmt_cache, config}) do
+    {:stop, :normal, {db, stmt_cache, config}}
   end
 
-  def terminate(_reason, {db, _stmt_cache, _timeout}) do
-    Sqlitex.close(db)
+  def terminate(_reason, {db, _stmt_cache, config}) do
+    Sqlitex.close(db, config)
     :ok
   end
 
   ## Public API
 
+  @doc """
+  Same as `Sqlitex.exec/3` but using the shared db connections saved in the GenServer state.
+
+  Returns the results otherwise.
+  """
   def exec(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:exec, sql}, timeout(opts))
+    GenServer.call(pid, {:exec, sql}, Config.call_timeout(opts))
   end
 
+  @doc """
+  Same as `Sqlitex.Query.query/3` but using the shared db connections saved in the GenServer state.
+
+  Returns the results otherwise.
+  """
   def query(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:query, sql, opts}, timeout(opts))
+    GenServer.call(pid, {:query, sql, opts}, Config.call_timeout(opts))
   end
 
+  @doc """
+  Same as `Sqlitex.Query.query_rows/3` but using the shared db connections saved in the GenServer state.
+
+  Returns the results otherwise.
+  """
   def query_rows(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:query_rows, sql, opts}, timeout(opts))
+    GenServer.call(pid, {:query_rows, sql, opts}, Config.call_timeout(opts))
   end
 
   def set_update_hook(server_pid, notification_pid, opts \\ []) do
-    GenServer.call(server_pid, {:set_update_hook, notification_pid, opts}, timeout(opts))
+    GenServer.call(server_pid, {:set_update_hook, notification_pid, opts}, Config.call_timeout(opts))
   end
 
   @doc """
@@ -160,7 +180,7 @@ defmodule Sqlitex.Server do
   could not be prepared.
   """
   def prepare(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:prepare, sql}, timeout(opts))
+    GenServer.call(pid, {:prepare, sql}, Config.call_timeout(opts))
   end
 
   def create_table(pid, name, table_opts \\ [], cols) do
@@ -173,30 +193,24 @@ defmodule Sqlitex.Server do
 
   ## Helpers
 
-  defp query_impl(sql, opts, stmt_cache, db_timeout) do
-    db_opts = [db_timeout: db_timeout]
-
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, db_opts),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), db_opts),
-         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), Keyword.get(opts, :into, [])),
+  defp query_impl(sql, stmt_cache, opts) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
+         {:ok, rows} <- Statement.fetch_all(stmt, opts),
     do: {:ok, rows, new_cache}
   end
 
-  defp query_rows_impl(sql, opts, stmt_cache, db_timeout) do
-    db_opts = [db_timeout: db_timeout]
-
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, db_opts),
-         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), db_opts),
-         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), :raw_list),
+  defp query_rows_impl(sql, stmt_cache, opts) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.put(opts, :into, :raw_list)),
     do: {:ok,
          %{rows: rows, columns: stmt.column_names, types: stmt.column_types},
          new_cache}
   end
 
-  defp prepare_impl(sql, stmt_cache, db_timeout) do
-    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, [db_timeout: db_timeout]),
+  defp prepare_impl(sql, stmt_cache, opts) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
     do: {:ok, %{columns: stmt.column_names, types: stmt.column_types}, new_cache}
   end
-
-  defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
 end
