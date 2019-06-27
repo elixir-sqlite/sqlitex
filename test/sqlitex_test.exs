@@ -38,7 +38,7 @@ defmodule Sqlitex.Test do
     assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
     Sqlitex.Server.stop(conn)
   end
-  
+
   test "server basic query by name" do
     {:ok, _} = Sqlitex.Server.start_link(@shared_cache, name: :sql)
     {:ok, [row]} = Sqlitex.Server.query(:sql, "SELECT * FROM players ORDER BY id LIMIT 1")
