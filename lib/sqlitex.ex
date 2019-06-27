@@ -37,6 +37,22 @@ defmodule Sqlitex do
   ```
   config :sqlitex, db_timeout: 10_000 # or other positive integer number of ms
   ```
+
+  Another esqlite parameter is :db_chunk_size.
+  This is a count of rows to read from native sqlite and send to erlang process in one bulk.
+  For example, the table `mytable` has 1000 rows. We make the query to get all rows with `db_chunk_size: 500` parameter:
+  ```
+  Sqlitex.query(db, "select * from mytable", db_chunk_size: 500)
+  ```
+  in this case all rows will be passed from native sqlite OS thread to the erlang process in two passes.
+  Each pass will contain 500 rows.  
+  This parameter decrease overhead of transmitting rows from native OS sqlite thread to the erlang process by
+  chunking list of result rows.  
+  Please, decrease this value if rows are heavy. Default value is 5000.  
+  If you in doubt what to do with this parameter, please, do nothing. Default value is ok.
+  ```
+  config :sqlitex, db_chunk_size: 500 # if most of the database rows are heavy
+  ```
   """
 
   alias Sqlitex.Config
@@ -44,8 +60,7 @@ defmodule Sqlitex do
   @spec close(connection) :: :ok
   @spec close(connection, Keyword.t) :: :ok
   def close(db, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-    :esqlite3.close(db, timeout)
+    :esqlite3.close(db, Config.db_timeout(opts))
   end
 
   @spec open(charlist | String.t) :: {:ok, connection} | {:error, {atom, charlist}}
@@ -53,8 +68,7 @@ defmodule Sqlitex do
   def open(path, opts \\ [])
   def open(path, opts) when is_binary(path), do: open(string_to_charlist(path), opts)
   def open(path, opts) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-    :esqlite3.open(path, timeout)
+    :esqlite3.open(path, Config.db_timeout(opts))
   end
 
   def with_db(path, fun, opts \\ []) do
@@ -78,8 +92,7 @@ defmodule Sqlitex do
   """
   @spec set_update_hook(connection, pid, Keyword.t()) :: :ok | {:error, term()}
   def set_update_hook(db, pid, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-    :esqlite3.set_update_hook(pid, db, timeout)
+    :esqlite3.set_update_hook(pid, db, Config.db_timeout(opts))
   end
 
   @doc """
@@ -92,8 +105,7 @@ defmodule Sqlitex do
   @spec exec(connection, string_or_charlist) :: :ok | sqlite_error
   @spec exec(connection, string_or_charlist, Keyword.t) :: :ok | sqlite_error
   def exec(db, sql, opts \\ []) do
-    timeout = Keyword.get(opts, :db_timeout, Config.db_timeout())
-    :esqlite3.exec(sql, db, timeout)
+    :esqlite3.exec(sql, db, Config.db_timeout(opts))
   end
 
   @doc "A shortcut to `Sqlitex.Query.query/3`"

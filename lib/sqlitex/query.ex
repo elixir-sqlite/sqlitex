@@ -24,6 +24,8 @@ defmodule Sqlitex.Query do
   * `into` - The collection to put results into.  This defaults to a list.
   * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
     to `Application.get_env(:sqlitex, :db_timeout)` or `5000` ms if not configured.
+  * `db_chunk_size` - The number of rows to read from native sqlite and send to erlang process in one bulk.
+    Defaults to `Application.get_env(:sqlitex, :db_chunk_size)` or `5000` ms if not configured.
 
   ## Returns
   * {:ok, [results...]} on success
@@ -39,7 +41,7 @@ defmodule Sqlitex.Query do
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql, opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
-         {:ok, res} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), Keyword.get(opts, :into, [])),
+         {:ok, res} <- Statement.fetch_all(stmt, opts),
     do: {:ok, res}
   end
 
@@ -73,6 +75,8 @@ defmodule Sqlitex.Query do
     to bind as a list.
   * `db_timeout` - The timeout (in ms) to apply to each of the underlying SQLite operations. Defaults
     to `Application.get_env(:sqlitex, :db_timeout)` or `5000` ms if not configured.
+  * `db_chunk_size` - The number of rows to read from native sqlite and send to erlang process in one bulk.
+    Defaults to `Application.get_env(:sqlitex, :db_chunk_size)` or `5000` ms if not configured.
 
   ## Returns
   * {:ok, %{rows: [[1, 2], [2, 3]], columns: [:a, :b], types: [:INTEGER, :INTEGER]}} on success
@@ -84,7 +88,7 @@ defmodule Sqlitex.Query do
   def query_rows(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql, opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
-         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.get(opts, :db_timeout, 5_000), :raw_list),
+         {:ok, rows} <- Statement.fetch_all(stmt, Keyword.put(opts, :into, :raw_list)),
     do: {:ok, %{rows: rows, columns: stmt.column_names, types: stmt.column_types}}
   end
 

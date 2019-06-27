@@ -1,4 +1,4 @@
-defmodule SqlBuilderTest do
+defmodule Sqlitex.SqlBuilderTest do
   alias Sqlitex.SqlBuilder, as: Sql
   use ExUnit.Case
 
