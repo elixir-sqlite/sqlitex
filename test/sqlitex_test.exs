@@ -1,4 +1,4 @@
-defmodule SqlitexTest do
+defmodule Sqlitex.Test do
   use ExUnit.Case
   doctest Sqlitex
 
@@ -9,7 +9,7 @@ defmodule SqlitexTest do
     on_exit fn ->
       Sqlitex.close(db)
     end
-    {:ok, golf_db: TestDatabase.init(db)}
+    {:ok, golf_db: Sqlitex.TestDatabase.init(db)}
   end
 
   test "set_update_hook", %{golf_db: db} do
@@ -28,6 +28,13 @@ defmodule SqlitexTest do
   test "server basic query" do
     {:ok, conn} = Sqlitex.Server.start_link(@shared_cache)
     {:ok, [row]} = Sqlitex.Server.query(conn, "SELECT * FROM players ORDER BY id LIMIT 1")
+    assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
+    Sqlitex.Server.stop(conn)
+  end
+
+  test "server basic query with db_timeout and db_chink_size" do
+    {:ok, conn} = Sqlitex.Server.start_link(@shared_cache)
+    {:ok, [row]} = Sqlitex.Server.query(conn, "SELECT * FROM players ORDER BY id LIMIT 1", db_timeout: 1_000, db_chunk_size: 10)
     assert row == [id: 1, name: "Mikey", created_at: {{2012, 10, 14}, {05, 46, 28, 318_107}}, updated_at: {{2013, 09, 06}, {22, 29, 36, 610_911}}, type: nil]
     Sqlitex.Server.stop(conn)
   end
