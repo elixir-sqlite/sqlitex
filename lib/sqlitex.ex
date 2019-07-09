@@ -45,10 +45,10 @@ defmodule Sqlitex do
   Sqlitex.query(db, "select * from mytable", db_chunk_size: 500)
   ```
   in this case all rows will be passed from native sqlite OS thread to the erlang process in two passes.
-  Each pass will contain 500 rows.  
+  Each pass will contain 500 rows.
   This parameter decrease overhead of transmitting rows from native OS sqlite thread to the erlang process by
-  chunking list of result rows.  
-  Please, decrease this value if rows are heavy. Default value is 5000.  
+  chunking list of result rows.
+  Please, decrease this value if rows are heavy. Default value is 5000.
   If you in doubt what to do with this parameter, please, do nothing. Default value is ok.
   ```
   config :sqlitex, db_chunk_size: 500 # if most of the database rows are heavy
@@ -172,7 +172,7 @@ defmodule Sqlitex do
       {:ok, result}
     else
       err ->
-        :ok = exec(db, "rollback")
+        :ok = exec(db, "rollback", opts)
         err
     end
   end
