@@ -119,9 +119,9 @@ defmodule Sqlitex.Server do
     {:reply, result, {db, stmt_cache, config}}
   end
 
-  def handle_call({:with_transaction, fun}, _from, {db, stmt_cache, timeout}) do
+  def handle_call({:with_transaction, fun}, _from, {db, stmt_cache, config}) do
     result = Sqlitex.with_transaction(db, fun)
-    {:reply, result, {db, stmt_cache, timeout}}
+    {:reply, result, {db, stmt_cache, config}}
   end
 
   def handle_cast(:stop, {db, stmt_cache, config}) do
@@ -214,7 +214,7 @@ defmodule Sqlitex.Server do
   """
   @spec with_transaction(pid(), (Sqlitex.connection -> any()), Keyword.t) :: any
   def with_transaction(pid, fun, opts \\ []) do
-    GenServer.call(pid, {:with_transaction, fun}, timeout(opts))
+    GenServer.call(pid, {:with_transaction, fun}, Config.call_timeout(opts))
   end
 
   ## Helpers
