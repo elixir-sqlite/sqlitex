@@ -36,8 +36,8 @@ defmodule Sqlitex.Query do
     @type charlist :: char_list
   end
 
-  @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
-  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [keyword]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [keyword]} | {:error, term()}
   def query(db, sql, opts \\ []) do
     with {:ok, stmt} <- Statement.prepare(db, sql, opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
@@ -50,7 +50,7 @@ defmodule Sqlitex.Query do
 
   Returns the results otherwise.
   """
-  @spec query!(Sqlitex.connection, String.t | charlist) :: [[]]
+  @spec query!(Sqlitex.connection, String.t | charlist) :: [keyword]
   @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t, db_timeout: integer()]) :: [Enum.t]
   def query!(db, sql, opts \\ []) do
     case query(db, sql, opts) do
