@@ -3,7 +3,7 @@ defmodule Sqlitex do
     @type charlist :: char_list
   end
 
-  @type connection :: {:connection, reference, binary()}
+  @type connection :: {:connection, reference(), reference()}
   @type string_or_charlist :: String.t | charlist
   @type sqlite_error :: {:error, {:sqlite_error, charlist}}
 
@@ -109,12 +109,12 @@ defmodule Sqlitex do
   end
 
   @doc "A shortcut to `Sqlitex.Query.query/3`"
-  @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [[]]} | {:error, term()}
-  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [[]]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [keyword]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist, [{atom, term}]) :: {:ok, [keyword]} | {:error, term()}
   def query(db, sql, opts \\ []), do: Sqlitex.Query.query(db, sql, opts)
 
   @doc "A shortcut to `Sqlitex.Query.query!/3`"
-  @spec query!(Sqlitex.connection, String.t | charlist) :: [[]]
+  @spec query!(Sqlitex.connection, String.t | charlist) :: [keyword]
   @spec query!(Sqlitex.connection, String.t | charlist, [bind: [], into: Enum.t, db_timeout: integer()]) :: [Enum.t]
   def query!(db, sql, opts \\ []), do: Sqlitex.Query.query!(db, sql, opts)
 
