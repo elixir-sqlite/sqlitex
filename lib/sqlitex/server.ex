@@ -239,6 +239,4 @@ defmodule Sqlitex.Server do
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
     do: {:ok, %{columns: stmt.column_names, types: stmt.column_types}, new_cache}
   end
-
-  defp timeout(kwopts), do: Keyword.get(kwopts, :timeout, 5000)
 end
