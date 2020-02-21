@@ -212,7 +212,7 @@ defmodule Sqlitex.Server do
       iex> Sqlitex.Server.query(server, "select * from foo")
       {:ok, [[{:id, 42}]]}
   """
-  @spec with_transaction(pid(), (Sqlitex.connection -> any()), Keyword.t) :: any
+  @spec with_transaction(pid() | atom(), (Sqlitex.connection -> any()), Keyword.t) :: any
   def with_transaction(pid, fun, opts \\ []) do
     GenServer.call(pid, {:with_transaction, fun}, Config.call_timeout(opts))
   end
