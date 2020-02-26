@@ -119,9 +119,11 @@ defmodule Sqlitex.Server do
     {:reply, result, {db, stmt_cache, config}}
   end
 
-  def handle_call({:with_transaction, fun}, _from, {db, stmt_cache, config}) do
-    result = Sqlitex.with_transaction(db, fun)
-    {:reply, result, {db, stmt_cache, config}}
+  def handle_call({:with_transaction, fun}, _from, {db, _stmt_cache, _config} = state) do
+    pid = self()
+    Process.put({:state, pid}, state)
+    result = Sqlitex.with_transaction(db, fn _db -> fun.(pid) end)
+    {:reply, result, Process.delete({:state, pid})}
   end
 
   def handle_cast(:stop, {db, stmt_cache, config}) do
@@ -141,7 +143,7 @@ defmodule Sqlitex.Server do
   Returns the results otherwise.
   """
   def exec(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:exec, sql}, Config.call_timeout(opts))
+    call(pid, {:exec, sql}, opts)
   end
 
   @doc """
@@ -150,7 +152,7 @@ defmodule Sqlitex.Server do
   Returns the results otherwise.
   """
   def query(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:query, sql, opts}, Config.call_timeout(opts))
+    call(pid, {:query, sql, opts}, opts)
   end
 
   @doc """
@@ -159,11 +161,11 @@ defmodule Sqlitex.Server do
   Returns the results otherwise.
   """
   def query_rows(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:query_rows, sql, opts}, Config.call_timeout(opts))
+    call(pid, {:query_rows, sql, opts}, opts)
   end
 
   def set_update_hook(server_pid, notification_pid, opts \\ []) do
-    GenServer.call(server_pid, {:set_update_hook, notification_pid, opts}, Config.call_timeout(opts))
+    call(server_pid, {:set_update_hook, notification_pid, opts}, opts)
   end
 
   @doc """
@@ -185,11 +187,11 @@ defmodule Sqlitex.Server do
   could not be prepared.
   """
   def prepare(pid, sql, opts \\ []) do
-    GenServer.call(pid, {:prepare, sql}, Config.call_timeout(opts))
+    call(pid, {:prepare, sql}, opts)
   end
 
   def create_table(pid, name, table_opts \\ [], cols) do
-    GenServer.call(pid, {:create_table, name, table_opts, cols})
+    call(pid, {:create_table, name, table_opts, cols}, [])
   end
 
   def stop(pid) do
@@ -206,18 +208,40 @@ defmodule Sqlitex.Server do
     ## Examples
       iex> {:ok, server} = Sqlitex.Server.start_link(":memory:")
       iex> Sqlitex.Server.with_transaction(server, fn(db) ->
-      ...>   Sqlitex.exec(db, "create table foo(id integer)")
-      ...>   Sqlitex.exec(db, "insert into foo (id) values(42)")
+      ...>   Sqlitex.Server.exec(db, "create table foo(id integer)")
+      ...>   Sqlitex.Server.exec(db, "insert into foo (id) values(42)")
       ...> end)
       iex> Sqlitex.Server.query(server, "select * from foo")
       {:ok, [[{:id, 42}]]}
   """
-  @spec with_transaction(pid() | atom(), (Sqlitex.connection -> any()), Keyword.t) :: any
   def with_transaction(pid, fun, opts \\ []) do
-    GenServer.call(pid, {:with_transaction, fun}, Config.call_timeout(opts))
+    call(pid, {:with_transaction, fun}, opts)
   end
 
   ## Helpers
+  defp call(atom, command, opts) when is_atom(atom) do
+    call(Process.whereis(atom), command, opts)
+  end
+
+  defp call(pid, command, opts) when is_pid(pid) do
+    if pid == self() do
+      key = {:state, pid}
+      state = Process.get(key)
+      case command do
+        {:with_transaction, fun} ->
+          {db, _stmt_cache, _config} = state
+          {:ok, fun.(db)}
+        _other ->
+          {:reply, result, state} = handle_call(command, nil, state)
+          Process.put(key, state)
+          result
+      end
+    else
+      GenServer.call(pid, command, Config.call_timeout(opts))
+    end
+  end
+
+
 
   defp query_impl(sql, stmt_cache, opts) do
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
