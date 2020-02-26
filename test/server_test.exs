@@ -9,7 +9,7 @@ defmodule Sqlitex.ServerTest do
     :ok = Server.exec(server, "create table foo(id integer)")
 
     Server.with_transaction(server, fn db ->
-      :ok = Sqlitex.exec(db, "insert into foo (id) values (42)")
+      :ok = Server.exec(db, "insert into foo (id) values (42)")
     end)
 
     assert Server.query(server, "select * from foo") == {:ok, [[{:id, 42}]]}
@@ -23,7 +23,7 @@ defmodule Sqlitex.ServerTest do
 
     try do
       Server.with_transaction(server, fn db ->
-        :ok = Sqlitex.exec(db, "insert into foo (id) values (42)")
+        :ok = Server.exec(db, "insert into foo (id) values (42)")
         raise "Error to roll back transaction"
       end)
     rescue
