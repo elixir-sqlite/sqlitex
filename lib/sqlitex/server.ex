@@ -119,6 +119,21 @@ defmodule Sqlitex.Server do
     {:reply, result, {db, stmt_cache, config}}
   end
 
+  def handle_info({:query, sql, opts}, state) do
+    queries = collect(100, [{sql, opts}])
+
+    state = if length(queries) > 1 do
+      queries = [{"BEGIN TRANSACTION", []} | Enum.reverse([{"COMMIT TRANSACTION", []} | queries])]
+      Enum.reduce(queries, state, fn {sql, opts}, state ->
+        async_query_impl(state, sql, opts)
+      end)
+    else
+      async_query_impl(state, sql, opts)
+    end
+
+    {:noreply, state}
+  end
+
   def handle_cast(:stop, {db, stmt_cache, config}) do
     {:stop, :normal, {db, stmt_cache, config}}
   end
@@ -146,6 +161,16 @@ defmodule Sqlitex.Server do
   """
   def query(pid, sql, opts \\ []) do
     GenServer.call(pid, {:query, sql, opts}, Config.call_timeout(opts))
+  end
+
+  @doc """
+  Same as `Sqlitex.Query.query/3` but using the shared db connections saved in the GenServer state and
+  executing async.
+
+  Returns the results otherwise.
+  """
+  def query_async(pid, sql, opts \\ []) do
+    send(pid, {:query, sql, opts})
   end
 
   @doc """
@@ -192,6 +217,23 @@ defmodule Sqlitex.Server do
   end
 
   ## Helpers
+  def collect(0, ret) do
+    ret
+  end
+  def collect(n, ret) do
+    receive do
+      {:query, sql, opt} -> collect(n-1, [{sql, opt} | ret])
+    after 0 ->
+      ret
+    end
+  end
+
+  defp async_query_impl({db, stmt_cache, config}, sql, opts) do
+    with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
+         {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
+         :ok <- Statement.exec!(stmt, opts),
+    do: {db, new_cache, config}
+  end
 
   defp query_impl(sql, stmt_cache, opts) do
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
