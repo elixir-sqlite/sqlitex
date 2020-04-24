@@ -6,11 +6,6 @@ defmodule Sqlitex do
   @type connection :: {:connection, reference(), reference()}
   @type string_or_charlist :: String.t | charlist
   @type sqlite_error :: {:error, {:sqlite_error, charlist}}
-  @type query_option ::
-    {:bind, [term]}
-    | {:into, Enum.t}
-    | {:db_timeout, pos_integer}
-    | {:db_chunk_size, pos_integer}
 
   @moduledoc """
   Sqlitex gives you a way to create and query SQLite databases.
@@ -115,22 +110,22 @@ defmodule Sqlitex do
 
   @doc "A shortcut to `Sqlitex.Query.query/3`"
   @spec query(Sqlitex.connection, String.t | charlist) :: {:ok, [keyword]} | {:error, term()}
-  @spec query(Sqlitex.connection, String.t | charlist, [query_option]) :: {:ok, [keyword]} | {:error, term()}
+  @spec query(Sqlitex.connection, String.t | charlist, [Sqlitex.Query.query_option]) :: {:ok, [keyword]} | {:error, term()}
   def query(db, sql, opts \\ []), do: Sqlitex.Query.query(db, sql, opts)
 
   @doc "A shortcut to `Sqlitex.Query.query!/3`"
   @spec query!(Sqlitex.connection, String.t | charlist) :: [keyword]
-  @spec query!(Sqlitex.connection, String.t | charlist, [query_option]) :: [Enum.t]
+  @spec query!(Sqlitex.connection, String.t | charlist, [Sqlitex.Query.query_option]) :: [Enum.t]
   def query!(db, sql, opts \\ []), do: Sqlitex.Query.query!(db, sql, opts)
 
   @doc "A shortcut to `Sqlitex.Query.query_rows/3`"
   @spec query_rows(Sqlitex.connection, String.t | charlist) :: {:ok, %{}} | Sqlitex.sqlite_error
-  @spec query_rows(Sqlitex.connection, String.t | charlist, [query_option]) :: {:ok, %{}} | Sqlitex.sqlite_error
+  @spec query_rows(Sqlitex.connection, String.t | charlist, [Sqlitex.Query.query_option]) :: {:ok, %{}} | Sqlitex.sqlite_error
   def query_rows(db, sql, opts \\ []), do: Sqlitex.Query.query_rows(db, sql, opts)
 
   @doc "A shortcut to `Sqlitex.Query.query_rows!/3`"
   @spec query_rows!(Sqlitex.connection, String.t | charlist) :: %{}
-  @spec query_rows!(Sqlitex.connection, String.t | charlist, [query_option]) :: %{}
+  @spec query_rows!(Sqlitex.connection, String.t | charlist, [Sqlitex.Query.query_option]) :: %{}
   def query_rows!(db, sql, opts \\ []), do: Sqlitex.Query.query_rows!(db, sql, opts)
 
   @doc """
