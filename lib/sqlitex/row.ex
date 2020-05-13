@@ -40,10 +40,12 @@ defmodule Sqlitex.Row do
   # datetime is empty ""
   defp translate_value({"", "datetime"}), do: nil
 
-  # datetime format is "YYYY-MM-DD HH:MM:SS.FFFFFF"
+  # datetime format is "YYYY-MM-DD HH:MM:SS.FFFFFF" or "YYYY-MM-DD"
   defp translate_value({datetime, "datetime"}) when is_binary(datetime) do
-    [date, time] = String.split(datetime)
-    {to_date(date), to_time(time)}
+    case String.split(datetime) do
+      [date, time] -> {to_date(date), to_time(time)}
+      [date] -> to_date(date)
+    end
   end
 
   defp translate_value({0, "boolean"}), do: false
