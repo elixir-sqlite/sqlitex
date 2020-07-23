@@ -189,7 +189,7 @@ defmodule Sqlitex do
     try do
       {:ok, apply(fun, args)}
     rescue
-      error -> {:error, {error, __STACKTRACE__}}
+      error -> {:rescued, error, __STACKTRACE__}
     end
   end
 end

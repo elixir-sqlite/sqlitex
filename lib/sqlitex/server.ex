@@ -215,7 +215,13 @@ defmodule Sqlitex.Server do
       {:ok, [[{:id, 42}]]}
   """
   def with_transaction(pid, fun, opts \\ []) do
-    call(pid, {:with_transaction, fun}, opts)
+    case call(pid, {:with_transaction, fun}, opts) do
+      {:rescued, error, trace} ->
+        Kernel.reraise(error, trace)
+
+      other ->
+        other
+    end
   end
 
   ## Helpers
