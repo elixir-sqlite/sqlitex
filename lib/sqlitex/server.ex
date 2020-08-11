@@ -247,8 +247,6 @@ defmodule Sqlitex.Server do
     end
   end
 
-
-
   defp query_impl(sql, stmt_cache, opts) do
     with {%Cache{} = new_cache, stmt} <- Cache.prepare(stmt_cache, sql, opts),
          {:ok, stmt} <- Statement.bind_values(stmt, Keyword.get(opts, :bind, []), opts),
