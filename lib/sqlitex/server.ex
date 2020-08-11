@@ -222,7 +222,7 @@ defmodule Sqlitex.Server do
   end
   defp collect(n, ret) do
     receive do
-      {:query, sql, opt} -> collect(n-1, [{sql, opt} | ret])
+      {:query, sql, opt} -> collect(n - 1, [{sql, opt} | ret])
     after 0 ->
       ret
     end
