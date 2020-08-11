@@ -217,10 +217,10 @@ defmodule Sqlitex.Server do
   end
 
   ## Helpers
-  def collect(0, ret) do
+  defp collect(0, ret) do
     ret
   end
-  def collect(n, ret) do
+  defp collect(n, ret) do
     receive do
       {:query, sql, opt} -> collect(n-1, [{sql, opt} | ret])
     after 0 ->
