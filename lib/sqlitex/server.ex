@@ -225,6 +225,10 @@ defmodule Sqlitex.Server do
   end
 
   ## Helpers
+  defp call(nil, _command, _opts) do
+    throw :no_such_process
+  end
+
   defp call(atom, command, opts) when is_atom(atom) do
     call(Process.whereis(atom), command, opts)
   end
