@@ -72,10 +72,11 @@ defmodule Sqlitex do
   end
 
   def with_db(path, fun, opts \\ []) do
-    {:ok, db} = open(path, opts)
-    res = fun.(db)
-    close(db, opts)
-    res
+    with {:ok, db} <- open(path, opts) do
+      res = fun.(db)
+      close(db, opts)
+      res
+    end
   end
 
   @doc """
