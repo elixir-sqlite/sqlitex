@@ -71,14 +71,14 @@ a `:db_timeout` option that is passed on to the esqlite calls and also defaults
 to 5000 ms. If required, this default value can be overridden globally with the
 following in your `config.exs`:
 
-```
+```elixir
 config :sqlitex, db_timeout: 10_000 # or other positive integer number of ms
 ```
 
 Another esqlite parameter is :db_chunk_size.
 This is a count of rows to read from native sqlite and send to erlang process in one bulk.
 For example, the table `mytable` has 1000 rows. We make the query to get all rows with `db_chunk_size: 500` parameter:
-```
+```elixir
 Sqlitex.query(db, "select * from mytable", db_chunk_size: 500)
 ```
 in this case all rows will be passed from native sqlite OS thread to the erlang process in two passes.
@@ -87,7 +87,7 @@ This parameter decrease overhead of transmitting rows from native OS sqlite thre
 chunking list of result rows.  
 Please, decrease this value if rows are heavy. Default value is 5000.  
 If you in doubt what to do with this parameter, please, do nothing. Default value is ok.
-```
+```elixir
 config :sqlitex, db_chunk_size: 500 # if most of the database rows are heavy
 ```
 
