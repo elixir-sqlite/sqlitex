@@ -10,15 +10,18 @@ defmodule Sqlitex.Row do
   defp build_row(_types, _columns, row, :raw_list) do
     Tuple.to_list(row)
   end
+
   defp build_row(types, columns, row, into) do
-    types = Enum.map(types, fn type ->
-      type |> Atom.to_string |> String.downcase
-    end)
-    values = row |> Tuple.to_list |> Enum.zip(types) |> Enum.map(&translate_value/1)
+    types =
+      Enum.map(types, fn type ->
+        type |> Atom.to_string() |> String.downcase()
+      end)
+
+    values = row |> Tuple.to_list() |> Enum.zip(types) |> Enum.map(&translate_value/1)
 
     columns
-      |> Enum.zip(values)
-      |> Enum.into(into)
+    |> Enum.zip(values)
+    |> Enum.into(into)
   end
 
   ## Convert SQLite values/types to Elixir types
@@ -52,15 +55,22 @@ defmodule Sqlitex.Row do
   defp translate_value({1, "boolean"}), do: true
 
   defp translate_value({int, type = <<"decimal", _::binary>>}) when is_integer(int) do
-    {result, _} = int |> Integer.to_string |> Float.parse
+    {result, _} = int |> Integer.to_string() |> Float.parse()
     translate_value({result, type})
   end
+
   defp translate_value({float, "decimal"}), do: Decimal.from_float(float)
+
   defp translate_value({float, "decimal(" <> rest}) do
-    [precision, scale] = rest |> string_rstrip(?)) |> String.split(",") |> Enum.map(&(&1 |> String.trim() |> String.to_integer))
-    Decimal.with_context %Decimal.Context{precision: precision, rounding: :down}, fn ->
-      float |> Float.round(scale) |> Decimal.from_float |> Decimal.plus
-    end
+    [precision, scale] =
+      rest
+      |> string_rstrip(?))
+      |> String.split(",")
+      |> Enum.map(&(&1 |> String.trim() |> String.to_integer()))
+
+    Decimal.Context.with(%Decimal.Context{precision: precision, rounding: :down}, fn ->
+      float |> Float.round(scale) |> Decimal.from_float() |> Decimal.add(0)
+    end)
   end
 
   defp translate_value({val, _type}) do
@@ -75,15 +85,20 @@ defmodule Sqlitex.Row do
   defp to_time(<<hr::binary-size(2), ":", mi::binary-size(2)>>) do
     {String.to_integer(hr), String.to_integer(mi), 0, 0}
   end
+
   defp to_time(<<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2)>>) do
     {String.to_integer(hr), String.to_integer(mi), String.to_integer(se), 0}
   end
-  defp to_time(<<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary>>) when byte_size(fr) <= 6 do
+
+  defp to_time(
+         <<hr::binary-size(2), ":", mi::binary-size(2), ":", se::binary-size(2), ".", fr::binary>>
+       )
+       when byte_size(fr) <= 6 do
     fr = String.to_integer(fr <> String.duplicate("0", 6 - String.length(fr)))
     {String.to_integer(hr), String.to_integer(mi), String.to_integer(se), fr}
   end
 
-  if Version.compare(System.version, "1.5.0") == :lt do
+  if Version.compare(System.version(), "1.5.0") == :lt do
     defp string_rstrip(string, char), do: String.rstrip(string, char)
   else
     defp string_rstrip(string, char), do: String.trim_trailing(string, to_string([char]))
