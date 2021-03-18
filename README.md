@@ -3,6 +3,11 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 [![Hex.pm](https://img.shields.io/hexpm/dt/sqlitex.svg)](https://hex.pm/packages/sqlitex)
 
+# Notice
+
+This library is sparsely maintined. If you are starting a new project, you will probably want to look into using
+[exqlite](https://github.com/elixir-sqlite/exqlite) or it's matching Ecto Adatper [ecto_sqlite3](https://github.com/elixir-sqlite/ecto_sqlite3)
+
 # Sqlitex
 
 An Elixir wrapper around [esqlite](https://github.com/mmzeeman/esqlite). The main aim here is to provide convenient usage of SQLite databases.
